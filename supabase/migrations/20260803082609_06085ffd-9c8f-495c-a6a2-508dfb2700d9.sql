@@ -1,0 +1,1 @@
+CREATE POLICY "app_state_service_role_only" ON public.app_state FOR ALL USING (false) WITH CHECK (false);
