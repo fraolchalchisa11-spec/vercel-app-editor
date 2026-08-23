@@ -1911,8 +1911,10 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
 function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open material", onOpenInApp, variant = "text" }) {
   const pillClass =
     "shrink-0 whitespace-nowrap rounded-full border border-sky-200 px-4 py-2 text-sm font-bold text-sky-600 transition hover:bg-sky-50";
+  const filledClass =
+    "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
   const textClass = "inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700 hover:text-sky-800 transition";
-  const className = variant === "pill" ? pillClass : textClass;
+  const className = variant === "pill" ? pillClass : variant === "filled" ? filledClass : textClass;
 
   if (htmlContent || htmlUrl) {
     return (
@@ -1922,7 +1924,8 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
         className={className}
       >
         {label}
-        {variant !== "pill" && <ExternalLink size={14} />}
+        {variant === "filled" && <ArrowRight size={14} />}
+        {variant !== "pill" && variant !== "filled" && <ExternalLink size={14} />}
       </button>
     );
   }
@@ -1937,7 +1940,8 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
       className={className}
     >
       {label}
-      {variant !== "pill" && <ExternalLink size={14} />}
+      {variant === "filled" && <ArrowRight size={14} />}
+      {variant !== "pill" && variant !== "filled" && <ExternalLink size={14} />}
     </button>
   );
 }
@@ -3152,8 +3156,65 @@ function AdminStudents({ data, setData }) {
 
 /* ----------------------------- ADMIN: Exams ----------------------------- */
 
-const EXAM_CATEGORIES = ["Final exam", "Mid exam"];
+const EXAM_CATEGORIES = ["Final exam", "Mid exam", "Practice exam"];
+const EXAM_CATEGORY_META = {
+  "Final exam": { label: "Final Exam", icon: GraduationCap },
+  "Mid exam": { label: "Mid Exam", icon: FileText },
+  "Practice exam": { label: "Practice Exam", icon: Pencil },
+};
 const NOTE_TYPES = ["Full Note"];
+
+/* ----------------------------- Freshman subjects (for exams) ----------------------------- */
+// Fixed list of common Ethiopian freshman courses, each with its own icon/color
+// so exam cards can show a subject-specific icon instead of a generic one.
+const FRESHMAN_SUBJECTS = [
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Mathematics",
+  "English",
+  "Civics and Ethical Education",
+  "Emerging Technologies",
+  "Economics",
+  "Geography",
+  "History",
+  "Logic and Critical Thinking",
+];
+
+const SUBJECT_ICON_MAP = {
+  "Physics": Atom,
+  "Chemistry": FlaskConical,
+  "Biology": Leaf,
+  "Mathematics": Calculator,
+  "English": Languages,
+  "Civics and Ethical Education": ShieldCheck,
+  "Emerging Technologies": Code2,
+  "Economics": TrendingUp,
+  "Geography": Globe2,
+  "History": BookOpen,
+  "Logic and Critical Thinking": Sparkles,
+};
+
+const SUBJECT_COLOR_MAP = {
+  "Physics": "#2563EB",
+  "Chemistry": "#059669",
+  "Biology": "#16A34A",
+  "Mathematics": "#7C3AED",
+  "English": "#DB2777",
+  "Civics and Ethical Education": "#0891B2",
+  "Emerging Technologies": "#4F46E5",
+  "Economics": "#D97706",
+  "Geography": "#0EA5E9",
+  "History": "#B45309",
+  "Logic and Critical Thinking": "#DC2626",
+};
+
+function subjectIcon(subject) {
+  return SUBJECT_ICON_MAP[subject] || BookOpen;
+}
+function subjectColor(subject) {
+  return SUBJECT_COLOR_MAP[subject] || "#2563EB";
+}
 
 function currentEthiopianYearGuess() {
   // Simple recent-year list generator; admin can type any year anyway.
@@ -3230,12 +3291,12 @@ function ExamYearForm({ initial, onSave, onClose, category, data }) {
   return (
     <Modal title={initial ? `Edit ${category} entry` : `Add ${category} year`} onClose={onClose}>
       <Field label="Subject">
-        <input
-          className={inputCls}
-          value={form.subject}
-          onChange={set("subject")}
-          placeholder="e.g. Physics"
-        />
+        <select className={inputCls} value={form.subject} onChange={set("subject")}>
+          <option value="">Choose a subject</option>
+          {FRESHMAN_SUBJECTS.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
       </Field>
       <Field label="University">
         <input
@@ -3306,9 +3367,6 @@ function AdminExams({ data, setData, onOpenInApp }) {
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const allEntriesInCategory = data.examCategories[activeCategory] || [];
-  const availableSubjects = Array.from(
-    new Set(allEntriesInCategory.map((e) => e.subject).filter(Boolean))
-  ).sort();
   const entries = [...allEntriesInCategory]
     .filter((e) => subjectFilter === "all" || (e.subject || "") === subjectFilter)
     .sort((a, b) => String(b.year).localeCompare(String(a.year)));
@@ -3372,17 +3430,22 @@ function AdminExams({ data, setData, onOpenInApp }) {
     <div>
       <div className="mb-3 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="flex gap-1.5 overflow-x-auto">
-          {EXAM_CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => setActiveCategory(c)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-                activeCategory === c ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+          {EXAM_CATEGORIES.map((c) => {
+            const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
+            const Icon = meta.icon;
+            return (
+              <button
+                key={c}
+                onClick={() => setActiveCategory(c)}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+                  activeCategory === c ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                <Icon size={14} />
+                {meta.label}
+              </button>
+            );
+          })}
         </div>
         <button
           onClick={() => setAdding(true)}
@@ -3401,7 +3464,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
           onChange={(e) => setSubjectFilter(e.target.value)}
         >
           <option value="all">All subjects</option>
-          {availableSubjects.map((s) => (
+          {FRESHMAN_SUBJECTS.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
@@ -3421,6 +3484,17 @@ function AdminExams({ data, setData, onOpenInApp }) {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
+                  {e.subject && (() => {
+                    const SubjectIcon = subjectIcon(e.subject);
+                    return (
+                      <span
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
+                        style={{ background: `${subjectColor(e.subject)}1A` }}
+                      >
+                        <SubjectIcon size={13} style={{ color: subjectColor(e.subject) }} />
+                      </span>
+                    );
+                  })()}
                   <div className="font-semibold text-slate-800">{e.title || `${activeCategory} ${e.year}`}</div>
                   {e.isPro && <ProBadge />}
                 </div>
@@ -5641,14 +5715,40 @@ function DepartmentPickerGrid({ data, countFor, onPick, title = "Departments" })
 }
 
 
-function ExamCard({ icon: Icon, title, university, year, isPro, locked, onUnlock, openSlot }) {
+function FilterSelect({ icon: Icon, value, onChange, children }) {
+  return (
+    <div className="relative shrink-0">
+      <Icon size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-blue-600" />
+      <select
+        value={value}
+        onChange={onChange}
+        className="appearance-none rounded-full border border-blue-200 bg-white py-2 pl-8 pr-7 text-xs font-bold text-blue-700"
+      >
+        {children}
+      </select>
+      <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-blue-400" />
+    </div>
+  );
+}
+
+function ExamCard({ categoryLabel, subject, title, university, year, isPro, locked, onUnlock, openSlot }) {
+  const SubjectIcon = subjectIcon(subject);
+  const color = subjectColor(subject);
   return (
     <div className="flex items-center justify-between gap-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
       <div className="flex min-w-0 items-center gap-3.5">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-50">
-          {locked ? <Lock size={20} className="text-blue-500" /> : <Icon size={20} className="text-sky-600" />}
+        <span
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+          style={{ background: `${color}1A` }}
+        >
+          {locked ? <Lock size={22} className="text-blue-500" /> : <SubjectIcon size={24} style={{ color }} />}
         </span>
         <div className="min-w-0">
+          {categoryLabel && (
+            <span className="mb-1 inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-600">
+              {categoryLabel}
+            </span>
+          )}
           <span className="block truncate text-[15px] font-bold text-slate-900">{title}</span>
           {university && (
             <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500">
@@ -5716,53 +5816,47 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
     <div>
       {!isSubscribed && <UnlockBanner label="exams" onUnlock={onUnlock} />}
 
-      <div className="mb-4 flex gap-1.5 overflow-x-auto">
-        {EXAM_CATEGORIES.map((c) => (
-          <button
-            key={c}
-            onClick={() => { setActiveCategory(c); clearAll(); }}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
-              activeCategory === c ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"
-            }`}
-          >
-            {c}
-          </button>
-        ))}
+      <div className="mb-4 grid grid-cols-3 overflow-hidden rounded-2xl border border-blue-200 bg-white">
+        {EXAM_CATEGORIES.map((c, i) => {
+          const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
+          const Icon = meta.icon;
+          const active = activeCategory === c;
+          return (
+            <button
+              key={c}
+              onClick={() => { setActiveCategory(c); clearAll(); }}
+              className={`flex items-center justify-center gap-1.5 py-3 text-[12px] font-bold transition ${
+                active ? "bg-blue-600 text-white" : "bg-white text-blue-600"
+              } ${i !== 0 ? "border-l border-blue-100" : ""}`}
+            >
+              <Icon size={15} />
+              {meta.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mb-4 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-        <select
-          value={yearFilter}
-          onChange={(e) => setYearFilter(e.target.value)}
-          className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
-        >
+        <FilterSelect icon={Calendar} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
           <option value="all">All years</option>
           {availableYears.map((y) => (
             <option key={y} value={y}>{y}</option>
           ))}
-        </select>
+        </FilterSelect>
 
-        <select
-          value={universityFilter}
-          onChange={(e) => setUniversityFilter(e.target.value)}
-          className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
-        >
+        <FilterSelect icon={Landmark} value={universityFilter} onChange={(e) => setUniversityFilter(e.target.value)}>
           <option value="all">All universities</option>
           {availableUniversities.map((u) => (
             <option key={u} value={u}>{u}</option>
           ))}
-        </select>
+        </FilterSelect>
 
-        <select
-          value={subjectFilter}
-          onChange={(e) => setSubjectFilter(e.target.value)}
-          className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
-        >
+        <FilterSelect icon={BookOpen} value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
           <option value="all">All subjects</option>
           {availableSubjects.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
-        </select>
+        </FilterSelect>
 
         {anyFilterActive && (
           <button
@@ -5785,7 +5879,8 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             return (
               <ExamCard
                 key={e.id}
-                icon={FileText}
+                categoryLabel={(EXAM_CATEGORY_META[activeCategory] || {}).label || activeCategory}
+                subject={e.subject}
                 title={e.title || `${activeCategory} ${e.year}`}
                 university={e.university}
                 year={e.year}
@@ -5799,7 +5894,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
                     htmlUrl={e.htmlUrl}
                     fileName={e.fileName}
                     label="Open"
-                    variant="pill"
+                    variant="filled"
                     onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "exam", category: activeCategory })}
                   />
                 }
@@ -7463,8 +7558,8 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
               <PageHeader
                 logoUrl={homeLogoUrl}
                 title={t(lang, "exams")}
-                subtitle="Browse final and mid exams"
-                placeholder="Search exams, years..."
+                subtitle="Browse final, mid and practice exams"
+                placeholder="Search exams, years, subjects..."
                 theme={theme}
                 darkMode={darkMode}
                 student={student}
