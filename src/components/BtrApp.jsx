@@ -10,7 +10,7 @@ import {
   CalendarClock, Flame, Target, BarChart3, Circle, ShieldCheck,
   Image as ImageIcon, UploadCloud, Send, Crown, Paperclip,
   Calculator, Briefcase, Code2, Download, MoreVertical, ChevronDown, ArrowLeft,
-  BadgePercent, ArrowUp, ArrowDown, Link2, Menu as MenuIcon, SlidersHorizontal,
+  BadgePercent, ArrowUp, ArrowDown, Link2, Menu as MenuIcon, SlidersHorizontal, ChevronUp,
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
@@ -5963,6 +5963,150 @@ function SubjectListCards({ rows, onPick, title = "Subjects", emptyLabel }) {
   );
 }
 
+function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }) {
+  const [expanded, setExpanded] = useState(!!defaultExpanded);
+  const topics = chapter.topics || [];
+  const progress = Math.max(0, Math.min(100, parseInt(chapter.progress, 10) || 0));
+
+  return (
+    <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3.5">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-sky-50">
+            {locked ? <Lock size={22} className="text-blue-500" /> : <FileText size={22} className="text-sky-600" />}
+          </span>
+          <div className="min-w-0">
+            <span className="block truncate text-[17px] font-bold text-slate-900">{chapter.title}</span>
+            {chapter.subtitle && (
+              <span className="block truncate text-sm text-slate-500">{chapter.subtitle}</span>
+            )}
+            {chapter.isPro && (
+              <span className="mt-1.5 inline-block">
+                <ProBadge />
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {locked ? (
+            <button
+              type="button"
+              onClick={onUnlock}
+              className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-600"
+            >
+              <Lock size={11} /> Unlock
+            </button>
+          ) : (
+            <MaterialLink
+              url={chapter.link}
+              htmlContent={chapter.htmlContent}
+              htmlUrl={chapter.htmlUrl}
+              fileName={chapter.fileName}
+              label="Open"
+              variant="pill"
+              onOpenInApp={onOpenInApp}
+            />
+          )}
+          {(chapter.subtitle || chapter.notesCount || chapter.topicsCount || chapter.estTime || topics.length > 0) && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-label={expanded ? "Collapse" : "Expand"}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+            >
+              {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          {(chapter.notesCount || chapter.topicsCount || chapter.estTime) && (
+            <div className="flex items-center justify-between gap-2">
+              {chapter.notesCount && (
+                <div className="flex flex-1 items-center gap-2">
+                  <FileText size={17} className="shrink-0 text-sky-600" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900">{chapter.notesCount} Notes</div>
+                    <div className="text-[11px] text-slate-400">Available</div>
+                  </div>
+                </div>
+              )}
+              {chapter.topicsCount && (
+                <div className="flex flex-1 items-center gap-2 border-l border-slate-100 pl-3">
+                  <BookOpen size={17} className="shrink-0 text-sky-600" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900">{chapter.topicsCount} Topics</div>
+                    <div className="text-[11px] text-slate-400">Covered</div>
+                  </div>
+                </div>
+              )}
+              {chapter.estTime && (
+                <div className="flex flex-1 items-center gap-2 border-l border-slate-100 pl-3">
+                  <Clock size={17} className="shrink-0 text-sky-600" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-slate-900">{chapter.estTime}</div>
+                    <div className="text-[11px] text-slate-400">Est. time</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {chapter.progress && (
+            <div className="mt-4 flex items-center gap-3">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
+              </div>
+              <span className="shrink-0 text-xs font-bold text-blue-600">{progress}% Complete</span>
+            </div>
+          )}
+
+          {topics.length > 0 && (
+            <div className="mt-5">
+              <div className="mb-2.5 text-sm font-bold text-slate-800">Topics in this chapter</div>
+              <div className="flex flex-col gap-2">
+                {topics.map((t) => {
+                  const href = !locked ? toEmbeddableUrl(normalizeUrl(t.link)) : null;
+                  const clickable = !!href;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      disabled={!clickable && !locked}
+                      onClick={() => {
+                        if (locked) { onUnlock && onUnlock(); return; }
+                        if (href) onOpenInApp(href, t.title);
+                      }}
+                      className={`flex items-center justify-between gap-2 rounded-2xl border border-slate-100 px-3.5 py-3 text-left ${
+                        clickable || locked ? "hover:bg-slate-50" : "cursor-default"
+                      }`}
+                    >
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-bold text-slate-900">{t.title}</span>
+                          {t.notesCount && (
+                            <span className="block text-xs text-slate-400">
+                              {t.notesCount} Note{String(t.notesCount) === "1" ? "" : "s"}
+                            </span>
+                          )}
+                        </span>
+                      </span>
+                      <ChevronRight size={18} className="shrink-0 text-slate-300" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
   const [subject, setSubject] = useState(null);
 
@@ -6002,28 +6146,16 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          {sorted.map((n) => {
+          {sorted.map((n, i) => {
             const locked = n.isPro && !isSubscribed;
             return (
-              <ContentRow
+              <ChapterCard
                 key={n.id}
-                icon={StickyNote}
-                title={n.title}
-                pinned={n.pinned}
+                chapter={n}
                 locked={locked}
                 onUnlock={onUnlock}
-                badges={<>{n.isPro && <ProBadge />}</>}
-                openSlot={
-                  <MaterialLink
-                    url={n.link}
-                    htmlContent={n.htmlContent}
-                    htmlUrl={n.htmlUrl}
-                    fileName={n.fileName}
-                    label="Open"
-                    variant="pill"
-                    onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: current.name })}
-                  />
-                }
+                defaultExpanded={i === 0}
+                onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: current.name })}
               />
             );
           })}
