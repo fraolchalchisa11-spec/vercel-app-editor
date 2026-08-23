@@ -16,19 +16,14 @@ import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
 import btrLogoAsset from "@/assets/btr-logo.png.asset.json";
 import btrAuthLogoAsset from "@/assets/btr-auth-logo.png.asset.json";
-import authBgAsset from "@/assets/auth-bg.png.asset.json";
-import heroBgAsset from "@/assets/hero-bg.jpg.asset.json";
-import homeBgAsset from "@/assets/home-bg.jpg.asset.json";
 import btrLogoMainAsset from "@/assets/btr-logo-main.png.asset.json";
-import pageBgAsset from "@/assets/page-bg.jpg.asset.json";
 
 const AUTH_LOGO_URL = btrAuthLogoAsset.url;
-const AUTH_BG_URL = authBgAsset.url;
 const AUTH_BLUE = "#123FBE";
-const HERO_BG_URL = heroBgAsset.url;
-const HOME_BG_URL = homeBgAsset.url;
 const HOME_LOGO_URL = btrLogoMainAsset.url;
-const PAGE_BG_URL = pageBgAsset.url;
+
+// App background uploaded to /public/app-background.png
+const APP_BG_URL = "/app-background.png";
 
 
 
@@ -1410,7 +1405,7 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
     <div
       className="relative flex min-h-screen w-full flex-col overflow-x-hidden"
       style={{
-        backgroundImage: `url(${AUTH_BG_URL})`,
+        backgroundImage: `url(${APP_BG_URL})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundColor: "#F4F5F8",
@@ -7151,17 +7146,11 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
       `}</style>
       <div
         className="min-h-screen w-full max-w-full overflow-x-hidden pb-24 transition-colors duration-300"
-        style={
-          !darkMode && tab === "home"
-            ? {
-                background: `url(${HOME_BG_URL}) top center / cover no-repeat fixed, #F4F7FC`,
-              }
-            : !darkMode && (tab === "exams" || tab === "notes")
-            ? {
-                background: `url(${PAGE_BG_URL}) top center / cover no-repeat fixed, #F4F7FC`,
-              }
-            : { background: theme.pageBg }
-        }
+        style={{
+        background: darkMode
+          ? theme.pageBg
+          : `url(${APP_BG_URL}) top center / cover no-repeat fixed`,
+      }}
       >
 
         {kickedOut && (
