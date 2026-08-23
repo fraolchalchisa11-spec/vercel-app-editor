@@ -124,8 +124,23 @@
     border-color: var(--color-border);
   }
 
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    width: 100%;
+  }
+
   body {
-    background-color: var(--color-background);
+    margin: 0;
     color: var(--color-foreground);
+
+    /* Your custom app background */
+    background-color: #f8f9fc;
+    background-image: url("/app-background.png");
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
   }
 }
