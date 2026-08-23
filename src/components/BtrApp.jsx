@@ -3223,7 +3223,7 @@ function HtmlUploadField({ fileName, onUpload, onRemove }) {
 
 function ExamYearForm({ initial, onSave, onClose, category, data }) {
   const [form, setForm] = useState(
-    initial || { year: String(currentEthiopianYearGuess()), title: "", department: "", link: "", htmlContent: "", htmlUrl: "", fileName: "", isPro: false }
+    initial || { year: String(currentEthiopianYearGuess()), title: "", department: "", university: "", link: "", htmlContent: "", htmlUrl: "", fileName: "", isPro: false }
   );
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const departmentOptions = departmentsList(data);
@@ -3237,6 +3237,14 @@ function ExamYearForm({ initial, onSave, onClose, category, data }) {
             <option key={d} value={d}>{d}</option>
           ))}
         </select>
+      </Field>
+      <Field label="University">
+        <input
+          className={inputCls}
+          value={form.university}
+          onChange={set("university")}
+          placeholder="e.g. Addis Ababa University"
+        />
       </Field>
       <Field label="Year">
         <input
@@ -5635,25 +5643,86 @@ function DepartmentPickerGrid({ data, countFor, onPick, title = "Departments" })
 }
 
 
+function ExamCard({ icon: Icon, title, university, year, isPro, locked, onUnlock, openSlot }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex min-w-0 items-center gap-3.5">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-50">
+          {locked ? <Lock size={20} className="text-blue-500" /> : <Icon size={20} className="text-sky-600" />}
+        </span>
+        <div className="min-w-0">
+          <span className="block truncate text-[15px] font-bold text-slate-900">{title}</span>
+          {university && (
+            <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500">
+              <Landmark size={13} className="shrink-0 text-slate-400" />
+              {university}
+            </span>
+          )}
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+              {year}
+            </span>
+            {isPro && <ProBadge />}
+          </div>
+        </div>
+      </div>
+
+      {locked ? (
+        <button
+          type="button"
+          onClick={onUnlock}
+          className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-600"
+        >
+          <Lock size={11} /> PRO
+        </button>
+      ) : (
+        openSlot
+      )}
+    </div>
+  );
+}
+
 function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
   const [activeCategory, setActiveCategory] = useState(EXAM_CATEGORIES[0]);
   const [yearFilter, setYearFilter] = useState("all");
+  const [universityFilter, setUniversityFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
 
   const catEntries = [...(data.examCategories[activeCategory] || [])];
+
   const availableYears = Array.from(new Set(catEntries.map((e) => e.year).filter(Boolean)))
     .sort((a, b) => String(b).localeCompare(String(a)));
+  const availableUniversities = Array.from(
+    new Set(catEntries.map((e) => e.university).filter(Boolean))
+  ).sort();
+  const availableDepartments = Array.from(
+    new Set(catEntries.map((e) => e.department).filter(Boolean))
+  ).sort();
+
   const entries = catEntries
     .filter((e) => yearFilter === "all" || String(e.year) === String(yearFilter))
+    .filter((e) => universityFilter === "all" || e.university === universityFilter)
+    .filter((e) => departmentFilter === "all" || e.department === departmentFilter)
     .sort((a, b) => String(b.year).localeCompare(String(a.year)));
+
+  const anyFilterActive =
+    yearFilter !== "all" || universityFilter !== "all" || departmentFilter !== "all";
+
+  const clearAll = () => {
+    setYearFilter("all");
+    setUniversityFilter("all");
+    setDepartmentFilter("all");
+  };
 
   return (
     <div>
       {!isSubscribed && <UnlockBanner label="exams" onUnlock={onUnlock} />}
+
       <div className="mb-4 flex gap-1.5 overflow-x-auto">
         {EXAM_CATEGORIES.map((c) => (
           <button
             key={c}
-            onClick={() => { setActiveCategory(c); setYearFilter("all"); }}
+            onClick={() => { setActiveCategory(c); clearAll(); }}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
               activeCategory === c ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"
             }`}
@@ -5662,28 +5731,51 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
           </button>
         ))}
       </div>
-      {availableYears.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          <select
-            value={yearFilter}
-            onChange={(e) => setYearFilter(e.target.value)}
-            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <select
+          value={yearFilter}
+          onChange={(e) => setYearFilter(e.target.value)}
+          className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+        >
+          <option value="all">All years</option>
+          {availableYears.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+
+        <select
+          value={universityFilter}
+          onChange={(e) => setUniversityFilter(e.target.value)}
+          className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+        >
+          <option value="all">All universities</option>
+          {availableUniversities.map((u) => (
+            <option key={u} value={u}>{u}</option>
+          ))}
+        </select>
+
+        <select
+          value={departmentFilter}
+          onChange={(e) => setDepartmentFilter(e.target.value)}
+          className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+        >
+          <option value="all">All departments</option>
+          {availableDepartments.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+
+        {anyFilterActive && (
+          <button
+            onClick={clearAll}
+            className="text-xs font-bold text-blue-600"
           >
-            <option value="all">All years</option>
-            {availableYears.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-          {yearFilter !== "all" && (
-            <button
-              onClick={() => setYearFilter("all")}
-              className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-500"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-      )}
+            Clear all
+          </button>
+        )}
+      </div>
+
       {entries.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
           No {activeCategory.toLowerCase()} materials posted yet.
@@ -5693,20 +5785,15 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
           {entries.map((e) => {
             const locked = e.isPro && !isSubscribed;
             return (
-              <ContentRow
+              <ExamCard
                 key={e.id}
                 icon={FileText}
                 title={e.title || `${activeCategory} ${e.year}`}
+                university={e.university}
+                year={e.year}
+                isPro={e.isPro}
                 locked={locked}
                 onUnlock={onUnlock}
-                badges={
-                  <>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
-                      {e.year}
-                    </span>
-                    {e.isPro && <ProBadge />}
-                  </>
-                }
                 openSlot={
                   <MaterialLink
                     url={e.link}
