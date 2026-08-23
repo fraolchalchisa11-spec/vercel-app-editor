@@ -3223,20 +3223,19 @@ function HtmlUploadField({ fileName, onUpload, onRemove }) {
 
 function ExamYearForm({ initial, onSave, onClose, category, data }) {
   const [form, setForm] = useState(
-    initial || { year: String(currentEthiopianYearGuess()), title: "", department: "", university: "", link: "", htmlContent: "", htmlUrl: "", fileName: "", isPro: false }
+    initial || { year: String(currentEthiopianYearGuess()), title: "", subject: "", university: "", link: "", htmlContent: "", htmlUrl: "", fileName: "", isPro: false }
   );
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-  const departmentOptions = departmentsList(data);
 
   return (
     <Modal title={initial ? `Edit ${category} entry` : `Add ${category} year`} onClose={onClose}>
-      <Field label="Department">
-        <select className={inputCls} value={form.department} onChange={set("department")}>
-          <option value="">Common to all departments</option>
-          {departmentOptions.map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
+      <Field label="Subject">
+        <input
+          className={inputCls}
+          value={form.subject}
+          onChange={set("subject")}
+          placeholder="e.g. Physics"
+        />
       </Field>
       <Field label="University">
         <input
@@ -3301,14 +3300,17 @@ function ExamYearForm({ initial, onSave, onClose, category, data }) {
 
 function AdminExams({ data, setData, onOpenInApp }) {
   const [activeCategory, setActiveCategory] = useState(EXAM_CATEGORIES[0]);
-  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [subjectFilter, setSubjectFilter] = useState("all");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const allEntriesInCategory = data.examCategories[activeCategory] || [];
+  const availableSubjects = Array.from(
+    new Set(allEntriesInCategory.map((e) => e.subject).filter(Boolean))
+  ).sort();
   const entries = [...allEntriesInCategory]
-    .filter((e) => departmentFilter === "all" || (e.department || "") === departmentFilter)
+    .filter((e) => subjectFilter === "all" || (e.subject || "") === subjectFilter)
     .sort((a, b) => String(b.year).localeCompare(String(a.year)));
 
   const addEntry = (form) => {
@@ -3325,7 +3327,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
           },
         },
         "Added exam entry",
-        `${activeCategory} — ${form.title || form.year}${form.department ? ` (${form.department})` : ""}`
+        `${activeCategory} — ${form.title || form.year}${form.subject ? ` (${form.subject})` : ""}`
       )
     );
     setAdding(false);
@@ -3343,7 +3345,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
           },
         },
         "Edited exam entry",
-        `${activeCategory} — ${form.title || form.year}${form.department ? ` (${form.department})` : ""}`
+        `${activeCategory} — ${form.title || form.year}${form.subject ? ` (${form.subject})` : ""}`
       )
     );
     setEditing(null);
@@ -3392,16 +3394,15 @@ function AdminExams({ data, setData, onOpenInApp }) {
       </div>
 
       <div className="mb-5 flex items-center gap-2">
-        <label className="text-xs font-semibold text-slate-400">Department</label>
+        <label className="text-xs font-semibold text-slate-400">Subject</label>
         <select
           className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700"
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
+          value={subjectFilter}
+          onChange={(e) => setSubjectFilter(e.target.value)}
         >
-          <option value="all">All departments</option>
-          <option value="">Common to all departments</option>
-          {departmentsList(data).map((d) => (
-            <option key={d} value={d}>{d}</option>
+          <option value="all">All subjects</option>
+          {availableSubjects.map((s) => (
+            <option key={s} value={s}>{s}</option>
           ))}
         </select>
       </div>
@@ -3420,14 +3421,11 @@ function AdminExams({ data, setData, onOpenInApp }) {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  {e.department && (
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: departmentColor(e.department, data) }} />
-                  )}
                   <div className="font-semibold text-slate-800">{e.title || `${activeCategory} ${e.year}`}</div>
                   {e.isPro && <ProBadge />}
                 </div>
                 <div className="mt-0.5 text-xs text-slate-500">
-                  {e.department || "Common to all departments"} · Year: {e.year}
+                  {e.subject || "No subject set"}{e.university ? ` · ${e.university}` : ""} · Year: {e.year}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -5686,7 +5684,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
   const [activeCategory, setActiveCategory] = useState(EXAM_CATEGORIES[0]);
   const [yearFilter, setYearFilter] = useState("all");
   const [universityFilter, setUniversityFilter] = useState("all");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [subjectFilter, setSubjectFilter] = useState("all");
 
   const catEntries = [...(data.examCategories[activeCategory] || [])];
 
@@ -5695,23 +5693,23 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
   const availableUniversities = Array.from(
     new Set(catEntries.map((e) => e.university).filter(Boolean))
   ).sort();
-  const availableDepartments = Array.from(
-    new Set(catEntries.map((e) => e.department).filter(Boolean))
+  const availableSubjects = Array.from(
+    new Set(catEntries.map((e) => e.subject).filter(Boolean))
   ).sort();
 
   const entries = catEntries
     .filter((e) => yearFilter === "all" || String(e.year) === String(yearFilter))
     .filter((e) => universityFilter === "all" || e.university === universityFilter)
-    .filter((e) => departmentFilter === "all" || e.department === departmentFilter)
+    .filter((e) => subjectFilter === "all" || e.subject === subjectFilter)
     .sort((a, b) => String(b.year).localeCompare(String(a.year)));
 
   const anyFilterActive =
-    yearFilter !== "all" || universityFilter !== "all" || departmentFilter !== "all";
+    yearFilter !== "all" || universityFilter !== "all" || subjectFilter !== "all";
 
   const clearAll = () => {
     setYearFilter("all");
     setUniversityFilter("all");
-    setDepartmentFilter("all");
+    setSubjectFilter("all");
   };
 
   return (
@@ -5732,11 +5730,11 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
         ))}
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
         <select
           value={yearFilter}
           onChange={(e) => setYearFilter(e.target.value)}
-          className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+          className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
           <option value="all">All years</option>
           {availableYears.map((y) => (
@@ -5747,7 +5745,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
         <select
           value={universityFilter}
           onChange={(e) => setUniversityFilter(e.target.value)}
-          className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+          className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
           <option value="all">All universities</option>
           {availableUniversities.map((u) => (
@@ -5756,20 +5754,20 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
         </select>
 
         <select
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
+          value={subjectFilter}
+          onChange={(e) => setSubjectFilter(e.target.value)}
+          className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
-          <option value="all">All departments</option>
-          {availableDepartments.map((d) => (
-            <option key={d} value={d}>{d}</option>
+          <option value="all">All subjects</option>
+          {availableSubjects.map((s) => (
+            <option key={s} value={s}>{s}</option>
           ))}
         </select>
 
         {anyFilterActive && (
           <button
             onClick={clearAll}
-            className="text-xs font-bold text-blue-600"
+            className="shrink-0 text-xs font-bold text-blue-600"
           >
             Clear all
           </button>
