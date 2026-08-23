@@ -138,7 +138,12 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-  }
+  background-color: #f7f8fc;
+  background-image: url("/app-background.png");
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
+  background-attachment: fixed;
+  color: var(--color-foreground);
 }
+
