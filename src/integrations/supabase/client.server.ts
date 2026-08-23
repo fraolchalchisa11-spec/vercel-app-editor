@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "./types";
+import type { Database } from "./database.types";
 
 function makeFetch(key: string): typeof fetch {
   // Opaque sb_publishable_/sb_secret_ keys aren't JWTs; PostgREST rejects them
