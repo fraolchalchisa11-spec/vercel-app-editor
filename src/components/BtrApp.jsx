@@ -24,6 +24,7 @@ const HOME_LOGO_URL = btrLogoMainAsset.url;
 
 // App background uploaded to /public/app-background.png
 const APP_BG_URL = "/app-background.png";
+const EXAM_NOTES_BG_URL = "/exam-notes-background.png";
 
 
 
@@ -7147,10 +7148,12 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
       <div
         className="min-h-screen w-full max-w-full overflow-x-hidden pb-24 transition-colors duration-300"
         style={{
-        background: darkMode
-          ? theme.pageBg
-          : `url(${APP_BG_URL}) top center / cover no-repeat fixed`,
-      }}
+          background: darkMode
+            ? theme.pageBg
+            : (tab === "exams" || tab === "notes")
+              ? `url(${EXAM_NOTES_BG_URL}) top center / cover no-repeat fixed`
+              : `url(${APP_BG_URL}) top center / cover no-repeat fixed`,
+        }}
       >
 
         {kickedOut && (
