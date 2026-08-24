@@ -722,9 +722,11 @@ function makeDefaultData() {
     activityLog: [],
     studentActivity: {},
     subscriptionRequests: [],
+    entranceResultRequests: [],
     planIcons: {},
     ads: [],
   };
+
 }
 
 function normalizeData(parsed) {
