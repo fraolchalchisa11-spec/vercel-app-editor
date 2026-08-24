@@ -11,8 +11,6 @@ import {
   Image as ImageIcon, UploadCloud, Send, Crown, Paperclip,
   Calculator, Briefcase, Code2, Download, MoreVertical, ChevronDown, ArrowLeft,
   BadgePercent, ArrowUp, ArrowDown, Link2, Menu as MenuIcon, SlidersHorizontal, ChevronUp,
-  ClipboardCheck, ClipboardList, IdCard,
-
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
@@ -724,11 +722,9 @@ function makeDefaultData() {
     activityLog: [],
     studentActivity: {},
     subscriptionRequests: [],
-    entranceResultRequests: [],
     planIcons: {},
     ads: [],
   };
-
 }
 
 function normalizeData(parsed) {
@@ -741,8 +737,6 @@ function normalizeData(parsed) {
   if (!parsed.studentActivity || typeof parsed.studentActivity !== "object") parsed.studentActivity = {};
   if (!Array.isArray(parsed.activityLog)) parsed.activityLog = [];
   if (!Array.isArray(parsed.subscriptionRequests)) parsed.subscriptionRequests = [];
-  if (!Array.isArray(parsed.entranceResultRequests)) parsed.entranceResultRequests = [];
-
   if (!parsed.planIcons || typeof parsed.planIcons !== "object") parsed.planIcons = {};
   if (!Array.isArray(parsed.ads)) parsed.ads = [];
   if (!Array.isArray(parsed.announcements)) parsed.announcements = [];
@@ -5935,32 +5929,32 @@ function mergedSubjects(data) {
 function SubjectListCards({ rows, onPick, title = "Subjects", emptyLabel }) {
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h3 className="text-base font-extrabold text-slate-900">{title}</h3>
-        <span className="text-sm font-semibold text-slate-400">{rows.length} total</span>
+      <div className="mb-2.5 flex items-center justify-between px-1">
+        <h3 className="text-sm font-extrabold text-slate-900">{title}</h3>
+        <span className="text-xs font-semibold text-slate-400">{rows.length} total</span>
       </div>
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 py-14 text-center text-sm text-slate-400">
           {emptyLabel}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {rows.map((r) => (
             <button
               key={r.id}
               onClick={() => onPick(r)}
-              className="group flex w-full items-center gap-3.5 rounded-3xl bg-white/90 p-3.5 text-left shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:shadow-md"
+              className="group flex w-full items-center gap-2.5 rounded-2xl bg-white/90 p-2.5 text-left shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:shadow-md"
             >
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: "#E4ECFD" }}>
-                <FileText size={22} style={{ color: "#2563EB" }} />
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "#E4ECFD" }}>
+                <FileText size={17} style={{ color: "#2563EB" }} />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-bold text-slate-900">{r.name}</span>
-                <span className="mt-0.5 block text-xs font-medium text-slate-400">
+                <span className="block truncate text-sm font-bold text-slate-900">{r.name}</span>
+                <span className="mt-0.5 block text-[11px] font-medium text-slate-400">
                   {r.count} item{r.count === 1 ? "" : "s"} available
                 </span>
               </span>
-              <ChevronRight size={20} className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5" />
+              <ChevronRight size={16} className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5" />
             </button>
           ))}
         </div>
@@ -5975,32 +5969,32 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
   const progress = Math.max(0, Math.min(100, parseInt(chapter.progress, 10) || 0));
 
   return (
-    <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3.5">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-sky-50">
-            {locked ? <Lock size={22} className="text-blue-500" /> : <FileText size={22} className="text-sky-600" />}
+    <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+      <div className="flex items-center justify-between gap-2.5">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-50">
+            {locked ? <Lock size={16} className="text-blue-500" /> : <FileText size={16} className="text-sky-600" />}
           </span>
           <div className="min-w-0">
-            <span className="block truncate text-[17px] font-bold text-slate-900">{chapter.title}</span>
+            <span className="block truncate text-sm font-bold text-slate-900">{chapter.title}</span>
             {chapter.subtitle && (
-              <span className="block truncate text-sm text-slate-500">{chapter.subtitle}</span>
+              <span className="block truncate text-xs text-slate-500">{chapter.subtitle}</span>
             )}
             {chapter.isPro && (
-              <span className="mt-1.5 inline-block">
+              <span className="mt-1 inline-block">
                 <ProBadge />
               </span>
             )}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           {locked ? (
             <button
               type="button"
               onClick={onUnlock}
-              className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-600"
+              className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-600"
             >
-              <Lock size={11} /> Unlock
+              <Lock size={10} /> Unlock
             </button>
           ) : (
             <MaterialLink
@@ -6018,42 +6012,42 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-slate-600"
             >
-              {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
           )}
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-4 border-t border-slate-100 pt-4">
+        <div className="mt-3 border-t border-slate-100 pt-3">
           {(chapter.notesCount || chapter.topicsCount || chapter.estTime) && (
             <div className="flex items-center justify-between gap-2">
               {chapter.notesCount && (
-                <div className="flex flex-1 items-center gap-2">
-                  <FileText size={17} className="shrink-0 text-sky-600" />
+                <div className="flex flex-1 items-center gap-1.5">
+                  <FileText size={14} className="shrink-0 text-sky-600" />
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-slate-900">{chapter.notesCount} Notes</div>
-                    <div className="text-[11px] text-slate-400">Available</div>
+                    <div className="text-xs font-bold text-slate-900">{chapter.notesCount} Notes</div>
+                    <div className="text-[10px] text-slate-400">Available</div>
                   </div>
                 </div>
               )}
               {chapter.topicsCount && (
-                <div className="flex flex-1 items-center gap-2 border-l border-slate-100 pl-3">
-                  <BookOpen size={17} className="shrink-0 text-sky-600" />
+                <div className="flex flex-1 items-center gap-1.5 border-l border-slate-100 pl-2.5">
+                  <BookOpen size={14} className="shrink-0 text-sky-600" />
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-slate-900">{chapter.topicsCount} Topics</div>
-                    <div className="text-[11px] text-slate-400">Covered</div>
+                    <div className="text-xs font-bold text-slate-900">{chapter.topicsCount} Topics</div>
+                    <div className="text-[10px] text-slate-400">Covered</div>
                   </div>
                 </div>
               )}
               {chapter.estTime && (
-                <div className="flex flex-1 items-center gap-2 border-l border-slate-100 pl-3">
-                  <Clock size={17} className="shrink-0 text-sky-600" />
+                <div className="flex flex-1 items-center gap-1.5 border-l border-slate-100 pl-2.5">
+                  <Clock size={14} className="shrink-0 text-sky-600" />
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-slate-900">{chapter.estTime}</div>
-                    <div className="text-[11px] text-slate-400">Est. time</div>
+                    <div className="text-xs font-bold text-slate-900">{chapter.estTime}</div>
+                    <div className="text-[10px] text-slate-400">Est. time</div>
                   </div>
                 </div>
               )}
@@ -6061,18 +6055,18 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
           )}
 
           {chapter.progress && (
-            <div className="mt-4 flex items-center gap-3">
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div className="mt-3 flex items-center gap-2.5">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                 <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
               </div>
-              <span className="shrink-0 text-xs font-bold text-blue-600">{progress}% Complete</span>
+              <span className="shrink-0 text-[11px] font-bold text-blue-600">{progress}% Complete</span>
             </div>
           )}
 
           {topics.length > 0 && (
-            <div className="mt-5">
-              <div className="mb-2.5 text-sm font-bold text-slate-800">Topics in this chapter</div>
-              <div className="flex flex-col gap-2">
+            <div className="mt-3.5">
+              <div className="mb-2 text-xs font-bold text-slate-800">Topics in this chapter</div>
+              <div className="flex flex-col gap-1.5">
                 {topics.map((t) => {
                   const href = !locked ? toEmbeddableUrl(normalizeUrl(t.link)) : null;
                   const clickable = !!href;
@@ -6085,22 +6079,22 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
                         if (locked) { onUnlock && onUnlock(); return; }
                         if (href) onOpenInApp(href, t.title);
                       }}
-                      className={`flex items-center justify-between gap-2 rounded-2xl border border-slate-100 px-3.5 py-3 text-left ${
+                      className={`flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2.5 text-left ${
                         clickable || locked ? "hover:bg-slate-50" : "cursor-default"
                       }`}
                     >
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-bold text-slate-900">{t.title}</span>
+                          <span className="block truncate text-[13px] font-bold text-slate-900">{t.title}</span>
                           {t.notesCount && (
-                            <span className="block text-xs text-slate-400">
+                            <span className="block text-[11px] text-slate-400">
                               {t.notesCount} Note{String(t.notesCount) === "1" ? "" : "s"}
                             </span>
                           )}
                         </span>
                       </span>
-                      <ChevronRight size={18} className="shrink-0 text-slate-300" />
+                      <ChevronRight size={15} className="shrink-0 text-slate-300" />
                     </button>
                   );
                 })}
@@ -6140,18 +6134,18 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
       {!isSubscribed && <UnlockBanner label={`${current.name} notes`} onUnlock={onUnlock} />}
       <button
         onClick={() => setSubject(null)}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
+        className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
       >
         ← Back to subjects
       </button>
-      <h3 className="mb-4 text-base font-bold text-slate-800">{current.name}</h3>
+      <h3 className="mb-3 text-sm font-bold text-slate-800">{current.name}</h3>
 
       {sorted.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
           No notes yet for this subject.
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5">
           {sorted.map((n, i) => {
             const locked = n.isPro && !isSubscribed;
             return (
@@ -6447,311 +6441,7 @@ function SettingsModal({ lang, prefs, onUpdatePrefs, onClose, onOpenProfile, onO
   );
 }
 
-/* ----------------------------- Entrance result: student screen ----------------------------- */
-
-function EntranceResultScreen({ student, data, theme, darkMode, onClose, onSubmit }) {
-  const logoUrl = useLogoUrl();
-  const myRequests = (data.entranceResultRequests || []).filter(
-    (r) => r.studentDbId === student.id
-  );
-  const latest = myRequests[0] || null;
-  const [admissionNumber, setAdmissionNumber] = useState(latest?.admissionNumber || "");
-  const [firstName, setFirstName] = useState(latest?.firstName || student.name?.split(" ")[0] || "");
-  const [sent, setSent] = useState(false);
-
-  const answered = myRequests.find((r) => r.status === "answered");
-  const canSend = admissionNumber.trim().length > 0 && firstName.trim().length > 0;
-
-  return (
-    <div
-      className="fixed inset-0 z-40 overflow-y-auto"
-      style={{ background: darkMode ? theme.pageBg || "#0F172A" : "#F1F5F9" }}
-    >
-      <div
-        className="min-h-screen bg-cover bg-center pb-28"
-        style={{ backgroundImage: darkMode ? "none" : `url(${APP_BG_URL})` }}
-      >
-        <div className="mx-auto max-w-md px-4 pt-5">
-          <button
-            onClick={onClose}
-            aria-label="Back"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm"
-            style={{ color: AUTH_BLUE }}
-          >
-            <ArrowLeft size={20} />
-          </button>
-
-          <div className="mt-4 flex flex-col items-center text-center">
-            <img src={logoUrl} alt="BTR ትምህርት" className="h-28 w-auto object-contain" />
-            <div className="mt-3 flex items-center gap-3">
-              <span
-                className="flex h-11 w-11 items-center justify-center rounded-2xl"
-                style={{ background: "#E4ECFD", color: AUTH_BLUE }}
-              >
-                <Calendar size={22} />
-              </span>
-              <h1 className="text-2xl font-bold" style={{ color: darkMode ? "#F8FAFC" : "#0F172A" }}>
-                <span style={{ color: AUTH_BLUE }}>{data?.entranceResultYear || "2018"}</span> Entrance Result
-              </h1>
-            </div>
-            <p className="mt-2 max-w-xs text-sm" style={{ color: darkMode ? "#CBD5E1" : "#64748B" }}>
-              Enter your details and we will notify you when the result is out.
-            </p>
-          </div>
-
-          {answered ? (
-            <div className="mt-6 rounded-3xl bg-white p-5 shadow-sm">
-              <div className="flex items-center gap-2 text-emerald-600">
-                <CheckCircle2 size={18} />
-                <span className="text-sm font-bold">Your result is ready</span>
-              </div>
-              <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
-                {answered.result}
-              </div>
-              {normalizeUrl(answered.resultLink) && (
-                <a
-                  href={normalizeUrl(answered.resultLink)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 text-sm font-bold"
-                  style={{ color: AUTH_BLUE }}
-                >
-                  Open result <ExternalLink size={15} />
-                </a>
-              )}
-              <div className="mt-3 text-xs text-slate-400">Sent {fmtDate(answered.answeredAt)}</div>
-            </div>
-          ) : (
-            <div className="mt-6 rounded-3xl bg-white p-5 shadow-sm">
-              <label className="block text-sm font-bold text-slate-900">Admission Number</label>
-              <div className="mt-2 flex items-center gap-2 rounded-2xl border border-slate-200 px-3 py-3">
-                <IdCard size={18} className="text-slate-400" />
-                <input
-                  value={admissionNumber}
-                  onChange={(e) => setAdmissionNumber(e.target.value)}
-                  placeholder="Enter your admission number"
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-                />
-              </div>
-
-              <label className="mt-5 block text-sm font-bold text-slate-900">First Name</label>
-              <div className="mt-2 flex items-center gap-2 rounded-2xl border border-slate-200 px-3 py-3">
-                <User size={18} className="text-slate-400" />
-                <input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Enter your first name"
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-                />
-              </div>
-
-              <button
-                disabled={!canSend || sent}
-                onClick={() => {
-                  onSubmit({ admissionNumber: admissionNumber.trim(), firstName: firstName.trim() });
-                  setSent(true);
-                }}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-white transition disabled:opacity-50"
-                style={{ background: AUTH_BLUE }}
-              >
-                <Send size={18} /> {sent ? "Sent" : "Send"}
-              </button>
-
-              {sent && (
-                <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-emerald-600">
-                  <CheckCircle2 size={14} /> Your details were sent to BTR admin.
-                </div>
-              )}
-              {!sent && latest && latest.status === "pending" && (
-                <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-amber-600">
-                  <Clock size={14} /> Already submitted — waiting for your result.
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="mt-6 flex items-start gap-3 rounded-2xl p-4" style={{ background: "#DEE8FB" }}>
-            <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70"
-              style={{ color: AUTH_BLUE }}
-            >
-              <Bell size={18} />
-            </span>
-            <div className="min-w-0">
-              <div className="text-sm font-bold" style={{ color: AUTH_BLUE }}>
-                We will notify you!
-              </div>
-              <div className="text-xs leading-relaxed" style={{ color: "#1E3A8A" }}>
-                Once the {data?.entranceResultYear || "2018"} entrance result is released, we will send
-                you a notification.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ----------------------------- Admin: entrance results ----------------------------- */
-
-function AdminEntranceResults({ data, setData }) {
-  const requests = data.entranceResultRequests || [];
-  const [drafts, setDrafts] = useState({});
-  const [year, setYear] = useState(data?.entranceResultYear || "2018");
-
-  const setDraft = (id, patch) =>
-    setDrafts((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), ...patch } }));
-
-  const send = (request) => {
-    const draft = drafts[request.id] || {};
-    const result = (draft.result || "").trim();
-    const resultLink = (draft.resultLink || "").trim();
-    if (!result && !resultLink) return;
-    setData((prev) =>
-      withActivity(
-        {
-          ...prev,
-          entranceResultRequests: (prev.entranceResultRequests || []).map((r) =>
-            r.id === request.id
-              ? {
-                  ...r,
-                  status: "answered",
-                  result: result || "Your entrance result is available. Tap to open it.",
-                  resultLink,
-                  answeredAt: new Date().toISOString(),
-                }
-              : r
-          ),
-        },
-        "Entrance result sent",
-        `${request.firstName} (${request.admissionNumber})`,
-        "Admin"
-      )
-    );
-    setDrafts((prev) => ({ ...prev, [request.id]: {} }));
-  };
-
-  const remove = (request) =>
-    setData((prev) => ({
-      ...prev,
-      entranceResultRequests: (prev.entranceResultRequests || []).filter((r) => r.id !== request.id),
-    }));
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4">
-        <div className="text-sm font-bold text-slate-900">Result year label</div>
-        <p className="mt-1 text-xs text-slate-500">Shown on the student "Check Entrance Result" page.</p>
-        <div className="mt-3 flex gap-2">
-          <input
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className="w-32 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
-          />
-          <button
-            onClick={() => setData((prev) => ({ ...prev, entranceResultYear: year.trim() || "2018" }))}
-            className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-
-      {requests.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center text-sm text-slate-400">
-          No entrance result requests yet.
-        </div>
-      ) : (
-        requests.map((r) => {
-          const draft = drafts[r.id] || {};
-          return (
-            <div key={r.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-bold text-slate-900">{r.firstName}</div>
-                  <div className="text-xs text-slate-500">
-                    Admission #{r.admissionNumber} · BTR ID {r.studentId}
-                  </div>
-                  <div className="mt-0.5 text-xs text-slate-400">Sent {fmtDate(r.createdAt)}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                      r.status === "answered"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
-                    {r.status === "answered" ? "Result sent" : "Pending"}
-                  </span>
-                  <button onClick={() => remove(r)} className="text-slate-300 hover:text-rose-500">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {r.status === "answered" ? (
-                <div className="mt-3 rounded-xl bg-slate-50 p-3">
-                  <div className="whitespace-pre-wrap text-sm text-slate-700">{r.result}</div>
-                  {normalizeUrl(r.resultLink) && (
-                    <a
-                      href={normalizeUrl(r.resultLink)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-sky-600"
-                    >
-                      Result link <ExternalLink size={13} />
-                    </a>
-                  )}
-                  <div className="mt-2 text-xs text-slate-400">Sent {fmtDate(r.answeredAt)}</div>
-                  <button
-                    onClick={() =>
-                      setData((prev) => ({
-                        ...prev,
-                        entranceResultRequests: (prev.entranceResultRequests || []).map((x) =>
-                          x.id === r.id ? { ...x, status: "pending" } : x
-                        ),
-                      }))
-                    }
-                    className="mt-3 text-xs font-semibold text-slate-500 hover:text-slate-900"
-                  >
-                    Edit / resend
-                  </button>
-                </div>
-              ) : (
-                <div className="mt-3 space-y-2">
-                  <textarea
-                    rows={3}
-                    value={draft.result || ""}
-                    onChange={(e) => setDraft(r.id, { result: e.target.value })}
-                    placeholder="Result message the student will see (e.g. placement, score, university)"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
-                  />
-                  <input
-                    value={draft.resultLink || ""}
-                    onChange={(e) => setDraft(r.id, { resultLink: e.target.value })}
-                    placeholder="Optional link (result slip, PDF...)"
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-sky-400"
-                  />
-                  <button
-                    onClick={() => send(r)}
-                    className="flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
-                  >
-                    <Send size={15} /> Send result
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })
-      )}
-    </div>
-  );
-}
-
 /* ----------------------------- Notifications panel ----------------------------- */
-
 
 function NotificationsPanel({ lang, items, onClose, onMarkAllRead, theme }) {
   return (
