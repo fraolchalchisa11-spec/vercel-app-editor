@@ -36,7 +36,9 @@ async function showOne({ title, body, tag }) {
   // app is in the background / not the foreground tab.
   try {
     if ("serviceWorker" in navigator) {
-      const reg = await navigator.serviceWorker.getRegistration();
+      const reg =
+        (await navigator.serviceWorker.getRegistration("/notifications-sw.js")) ||
+        (await navigator.serviceWorker.register("/notifications-sw.js"));
       if (reg) {
         await reg.showNotification(title, options);
         return;
@@ -45,6 +47,7 @@ async function showOne({ title, body, tag }) {
   } catch {
     /* fall through to the page-level notification */
   }
+
   try {
     new Notification(title, options);
   } catch {
