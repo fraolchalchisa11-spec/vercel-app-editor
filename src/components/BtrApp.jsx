@@ -739,6 +739,8 @@ function normalizeData(parsed) {
   if (!parsed.studentActivity || typeof parsed.studentActivity !== "object") parsed.studentActivity = {};
   if (!Array.isArray(parsed.activityLog)) parsed.activityLog = [];
   if (!Array.isArray(parsed.subscriptionRequests)) parsed.subscriptionRequests = [];
+  if (!Array.isArray(parsed.entranceResultRequests)) parsed.entranceResultRequests = [];
+
   if (!parsed.planIcons || typeof parsed.planIcons !== "object") parsed.planIcons = {};
   if (!Array.isArray(parsed.ads)) parsed.ads = [];
   if (!Array.isArray(parsed.announcements)) parsed.announcements = [];
