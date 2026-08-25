@@ -3526,7 +3526,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
 
 /* ----------------------------- ADMIN: Notes ----------------------------- */
 
-function NoteLinkForm({ initial, onSave, onClose, department }) {
+function NoteLinkForm({ initial, onSave, onClose, context }) {
   const [form, setForm] = useState(
     initial || { title: "", noteType: NOTE_TYPES[0], link: "", pinned: false, htmlContent: "", htmlUrl: "", fileName: "", isPro: false, subtitle: "", notesCount: "", topicsCount: "", estTime: "", progress: "", topics: [] }
   );
@@ -3536,7 +3536,7 @@ function NoteLinkForm({ initial, onSave, onClose, department }) {
     setForm((f) => ({ ...f, topics: (f.topics || []).map((t, idx) => (idx === i ? { ...t, ...patch } : t)) }));
 
   return (
-    <Modal title={initial ? "Edit note" : `Add note — ${department}`} onClose={onClose}>
+    <Modal title={initial ? "Edit note" : `Add note — ${context}`} onClose={onClose}>
       <Field label="Title">
         <input className={inputCls} value={form.title} onChange={set("title")} placeholder="e.g. Chapter 1" />
       </Field>
@@ -3645,8 +3645,8 @@ function NoteLinkForm({ initial, onSave, onClose, department }) {
 }
 
 /* Shared subject list UI (used by both admin and students). */
-function SubjectGrid({ data, department, notes, subjects, onPick, onBack, admin, onAdd, onEdit, onDelete }) {
-  const color = departmentColor(department, data);
+function SubjectGrid({ notes, subjects, onPick, admin, onAdd, onEdit, onDelete }) {
+  const color = "#2563EB";
   const generalCount = notesForSubject(notes, null).length;
   const rows = [
     ...subjects.map((s) => ({ ...s, general: false })),
@@ -3655,17 +3655,10 @@ function SubjectGrid({ data, department, notes, subjects, onPick, onBack, admin,
 
   return (
     <div className="relative">
-      <button
-        onClick={onBack}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
-      >
-        ← Back to departments
-      </button>
-
       <div className="mb-4">
         <h3 className="flex items-center gap-2 text-xl font-extrabold text-slate-900">
           <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-          {department}
+          Subjects
         </h3>
         <p className="mt-0.5 pl-5 text-sm text-slate-500">
           {subjects.length} subject{subjects.length === 1 ? "" : "s"}
@@ -3676,7 +3669,7 @@ function SubjectGrid({ data, department, notes, subjects, onPick, onBack, admin,
         <div className="rounded-2xl border border-dashed border-slate-200 py-14 text-center">
           <BookOpen size={28} className="mx-auto mb-3 text-slate-300" />
           <p className="text-sm text-slate-500">
-            {admin ? "No subjects yet — tap + to add one." : "No subjects yet for this department."}
+            {admin ? "No subjects yet — tap + to add one." : "No subjects yet."}
           </p>
         </div>
       ) : (
@@ -3740,10 +3733,10 @@ function SubjectGrid({ data, department, notes, subjects, onPick, onBack, admin,
   );
 }
 
-function SubjectForm({ initial, onSave, onClose, department }) {
+function SubjectForm({ initial, onSave, onClose }) {
   const [name, setName] = useState(initial?.name || "");
   return (
-    <Modal title={initial ? "Edit subject" : `Add subject — ${department}`} onClose={onClose}>
+    <Modal title={initial ? "Edit subject" : "Add subject"} onClose={onClose}>
       <Field label="Subject name">
         <input
           className={inputCls}
