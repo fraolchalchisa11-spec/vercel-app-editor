@@ -3760,7 +3760,6 @@ function SubjectForm({ initial, onSave, onClose }) {
 }
 
 function AdminNotes({ data, setData, onOpenInApp }) {
-  const [department, setDepartment] = useState(null);
   const [subject, setSubject] = useState(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -3769,125 +3768,97 @@ function AdminNotes({ data, setData, onOpenInApp }) {
   const [editingSubject, setEditingSubject] = useState(null);
   const [deletingSubject, setDeletingSubject] = useState(null);
 
-  const departments = departmentsList(data);
+  const getList = () => notesList(data);
 
-  const getList = (dept) => data.noteLinks[dept] || [];
-
-  const setList = (dept, list, logMsg) => {
+  const setList = (list, logMsg) => {
     const next = {
       ...data,
       noteLinks: {
         ...data.noteLinks,
-        [dept]: list,
+        [NOTES_BUCKET]: list,
       },
     };
     setData(logMsg ? withActivity(next, logMsg.action, logMsg.detail) : next);
   };
 
-  const setSubjects = (dept, list, logMsg) => {
+  const setSubjects = (list, logMsg) => {
     const next = {
       ...data,
-      subjects: { ...(data.subjects || {}), [dept]: list },
+      subjects: { ...(data.subjects || {}), [NOTES_BUCKET]: list },
     };
     setData(logMsg ? withActivity(next, logMsg.action, logMsg.detail) : next);
   };
 
   const addSubject = ({ name }) => {
-    const list = subjectsList(data, department);
-    setSubjects(department, [...list, { id: uid("subj"), name, createdAt: new Date().toISOString() }], {
+    const list = subjectsList(data);
+    setSubjects([...list, { id: uid("subj"), name, createdAt: new Date().toISOString() }], {
       action: "Added subject",
-      detail: `${department} — ${name}`,
+      detail: name,
     });
     setAddingSubject(false);
   };
   const saveSubject = ({ name }) => {
-    const list = subjectsList(data, department);
-    setSubjects(department, list.map((s) => (s.id === editingSubject.id ? { ...s, name } : s)), {
+    const list = subjectsList(data);
+    setSubjects(list.map((s) => (s.id === editingSubject.id ? { ...s, name } : s)), {
       action: "Edited subject",
-      detail: `${department} — ${name}`,
+      detail: name,
     });
     setEditingSubject(null);
   };
   const deleteSubject = (s) => {
-    const list = subjectsList(data, department).filter((x) => x.id !== s.id);
-    const notes = getList(department).map((n) => (n.subjectId === s.id ? { ...n, subjectId: null } : n));
+    const list = subjectsList(data).filter((x) => x.id !== s.id);
+    const notes = getList().map((n) => (n.subjectId === s.id ? { ...n, subjectId: null } : n));
     setData(
       withActivity(
         {
           ...data,
-          subjects: { ...(data.subjects || {}), [department]: list },
-          noteLinks: { ...data.noteLinks, [department]: notes },
+          subjects: { ...(data.subjects || {}), [NOTES_BUCKET]: list },
+          noteLinks: { ...data.noteLinks, [NOTES_BUCKET]: notes },
         },
         "Removed subject",
-        `${department} — ${s.name}`
+        s.name
       )
     );
     setDeletingSubject(null);
   };
 
   const addNote = (form) => {
-    const list = getList(department);
+    const list = getList();
     setList(
-      department,
       [...list, { ...form, subjectId: subject?.id || null, id: uid("note"), createdAt: new Date().toISOString() }],
-      { action: "Added note", detail: `${department} — ${form.title}` }
+      { action: "Added note", detail: form.title }
     );
     setAdding(false);
   };
   const saveEdit = (form) => {
-    const list = getList(department);
-    setList(department, list.map((n) => (n.id === editing.id ? { ...n, ...form } : n)), {
+    const list = getList();
+    setList(list.map((n) => (n.id === editing.id ? { ...n, ...form } : n)), {
       action: "Edited note",
-      detail: `${department} — ${form.title}`,
+      detail: form.title,
     });
     setEditing(null);
   };
   const doDelete = (id) => {
-    const list = getList(department);
+    const list = getList();
     const target = list.find((n) => n.id === id);
-    setList(department, list.filter((n) => n.id !== id), {
+    setList(list.filter((n) => n.id !== id), {
       action: "Removed note",
-      detail: `${department} — ${target ? target.title : id}`,
+      detail: target ? target.title : id,
     });
     setConfirmDelete(null);
   };
   const togglePin = (n) => {
-    const list = getList(department);
-    setList(department, list.map((x) => (x.id === n.id ? { ...x, pinned: !x.pinned } : x)));
+    const list = getList();
+    setList(list.map((x) => (x.id === n.id ? { ...x, pinned: !x.pinned } : x)));
   };
 
-  // Level 1: choose a department
-  if (!department) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {departments.map((d) => (
-          <button
-            key={d}
-            onClick={() => { setDepartment(d); setSubject(null); }}
-            className="rounded-2xl border border-slate-200 bg-white p-5 text-left hover:border-sky-300 hover:shadow-sm transition"
-          >
-            <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${departmentColor(d, data)}1A` }}>
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: departmentColor(d, data) }} />
-            </span>
-            <div className="font-semibold text-slate-800">{d}</div>
-            <div className="text-xs text-slate-400">
-              {subjectsList(data, d).length} subject{subjectsList(data, d).length === 1 ? "" : "s"} · {getList(d).length} note{getList(d).length === 1 ? "" : "s"}
-            </div>
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  // Level 2: subjects inside the department
+  // Level 1: subjects
   if (!subject) {
     return (
       <>
         <SubjectGrid
-          data={data}
-          department={department}
-          notes={getList(department)}
-          subjects={subjectsList(data, department)}
+          notes={getList()}
+          subjects={subjectsList(data)}
           admin
           onPick={(s) => setSubject(s)}
           onBack={() => setDepartment(null)}
