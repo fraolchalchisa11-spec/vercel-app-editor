@@ -157,51 +157,44 @@ function noteTypeColor(type) {
   return NOTE_TYPE_COLORS[type] || "#64748B";
 }
 
-/* ----------------------------- Departments ----------------------------- */
+/* ----------------------------- Subjects ----------------------------- */
 
-// Seed list — the admin can add/remove departments from here at runtime
-// (see data.departments), this is only the initial default set.
-const DEFAULT_DEPARTMENTS = [
-  "Accounting",
-  "Management",
-  "Marketing",
-  "Computer science",
-  "Economics",
-  "Pharmacy",
-  "Nursing",
-];
+// Content is organized as a flat list of subjects — there is no department
+// grouping anywhere in the app. Everything lives in one bucket.
+const NOTES_BUCKET = "all";
 
-const DEPARTMENT_COLOR_PALETTE = [
+const ACCENT_COLOR_PALETTE = [
   "#2563EB", "#7C3AED", "#059669", "#DB2777", "#D97706",
   "#0891B2", "#B45309", "#DC2626", "#16A34A", "#4F46E5",
 ];
 
-const DEPARTMENT_ICON_PALETTE = [
+const ACCENT_ICON_PALETTE = [
   Calculator, Briefcase, Megaphone, Code2, BarChart3,
   FlaskConical, Leaf, BookOpen, Globe2, Layers,
 ];
 
-function departmentsList(data) {
-  const list = Array.isArray(data?.departments) ? data.departments : DEFAULT_DEPARTMENTS;
-  return list.length ? list : DEFAULT_DEPARTMENTS;
+function accentIndex(key = "") {
+  const str = String(key || "");
+  let sum = 0;
+  for (let i = 0; i < str.length; i++) sum = (sum + str.charCodeAt(i)) % 9973;
+  return sum;
 }
 
-function departmentIcon(dept, data) {
-  const list = departmentsList(data);
-  const idx = list.indexOf(dept);
-  return DEPARTMENT_ICON_PALETTE[(idx < 0 ? 0 : idx) % DEPARTMENT_ICON_PALETTE.length] || Layers;
+function accentColor(key) {
+  return ACCENT_COLOR_PALETTE[accentIndex(key) % ACCENT_COLOR_PALETTE.length];
 }
 
-function departmentColor(dept, data) {
-  const list = departmentsList(data);
-  const idx = list.indexOf(dept);
-  return DEPARTMENT_COLOR_PALETTE[(idx < 0 ? 0 : idx) % DEPARTMENT_COLOR_PALETTE.length] || "#1B6FD6";
+function accentIcon(key) {
+  return ACCENT_ICON_PALETTE[accentIndex(key) % ACCENT_ICON_PALETTE.length] || Layers;
 }
 
-/* ----------------------------- Subjects (inside a department) ----------------------------- */
+function subjectsList(data) {
+  const list = data?.subjects?.[NOTES_BUCKET];
+  return Array.isArray(list) ? list : [];
+}
 
-function subjectsList(data, dept) {
-  const list = data?.subjects?.[dept];
+function notesList(data) {
+  const list = data?.noteLinks?.[NOTES_BUCKET];
   return Array.isArray(list) ? list : [];
 }
 
