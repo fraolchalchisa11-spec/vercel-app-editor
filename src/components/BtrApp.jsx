@@ -157,51 +157,44 @@ function noteTypeColor(type) {
   return NOTE_TYPE_COLORS[type] || "#64748B";
 }
 
-/* ----------------------------- Departments ----------------------------- */
+/* ----------------------------- Subjects ----------------------------- */
 
-// Seed list — the admin can add/remove departments from here at runtime
-// (see data.departments), this is only the initial default set.
-const DEFAULT_DEPARTMENTS = [
-  "Accounting",
-  "Management",
-  "Marketing",
-  "Computer science",
-  "Economics",
-  "Pharmacy",
-  "Nursing",
-];
+// Content is organized as a flat list of subjects — there is no department
+// grouping anywhere in the app. Everything lives in one bucket.
+const NOTES_BUCKET = "all";
 
-const DEPARTMENT_COLOR_PALETTE = [
+const ACCENT_COLOR_PALETTE = [
   "#2563EB", "#7C3AED", "#059669", "#DB2777", "#D97706",
   "#0891B2", "#B45309", "#DC2626", "#16A34A", "#4F46E5",
 ];
 
-const DEPARTMENT_ICON_PALETTE = [
+const ACCENT_ICON_PALETTE = [
   Calculator, Briefcase, Megaphone, Code2, BarChart3,
   FlaskConical, Leaf, BookOpen, Globe2, Layers,
 ];
 
-function departmentsList(data) {
-  const list = Array.isArray(data?.departments) ? data.departments : DEFAULT_DEPARTMENTS;
-  return list.length ? list : DEFAULT_DEPARTMENTS;
+function accentIndex(key = "") {
+  const str = String(key || "");
+  let sum = 0;
+  for (let i = 0; i < str.length; i++) sum = (sum + str.charCodeAt(i)) % 9973;
+  return sum;
 }
 
-function departmentIcon(dept, data) {
-  const list = departmentsList(data);
-  const idx = list.indexOf(dept);
-  return DEPARTMENT_ICON_PALETTE[(idx < 0 ? 0 : idx) % DEPARTMENT_ICON_PALETTE.length] || Layers;
+function accentColor(key) {
+  return ACCENT_COLOR_PALETTE[accentIndex(key) % ACCENT_COLOR_PALETTE.length];
 }
 
-function departmentColor(dept, data) {
-  const list = departmentsList(data);
-  const idx = list.indexOf(dept);
-  return DEPARTMENT_COLOR_PALETTE[(idx < 0 ? 0 : idx) % DEPARTMENT_COLOR_PALETTE.length] || "#1B6FD6";
+function accentIcon(key) {
+  return ACCENT_ICON_PALETTE[accentIndex(key) % ACCENT_ICON_PALETTE.length] || Layers;
 }
 
-/* ----------------------------- Subjects (inside a department) ----------------------------- */
+function subjectsList(data) {
+  const list = data?.subjects?.[NOTES_BUCKET];
+  return Array.isArray(list) ? list : [];
+}
 
-function subjectsList(data, dept) {
-  const list = data?.subjects?.[dept];
+function notesList(data) {
+  const list = data?.noteLinks?.[NOTES_BUCKET];
   return Array.isArray(list) ? list : [];
 }
 
@@ -552,7 +545,7 @@ const STRINGS = {
     welcomeBack: "Welcome back",
     exams: "Exams", notes: "Notes", updates: "Updates",
     announcements: "Announcements", recentExamMaterials: "Recent exam materials",
-    browseByDepartment: "Browse by department", home: "Home", logout: "Logout",
+    home: "Home", logout: "Logout",
     noAnnouncements: "No announcements yet.", noExamsTitle: "No exams posted yet.",
     noExamsSub: "Check back later for new materials.",
     profile: "Profile", viewProfile: "View profile", editProfile: "Edit profile",
@@ -569,7 +562,7 @@ const STRINGS = {
     welcomeBack: "Baga deebitan",
     exams: "Qormaata", notes: "Yaadannoo", updates: "Odeeffannoo",
     announcements: "Beeksisa", recentExamMaterials: "Meeshaalee qormaataa haaraa",
-    browseByDepartment: "Gosa barnootaan ilaali", home: "Mana", logout: "Bahi",
+    home: "Mana", logout: "Bahi",
     noAnnouncements: "Hanga ammaatti beeksisni hin jiru.", noExamsTitle: "Qormaanni hin maxxanfamne.",
     noExamsSub: "Boodarra deebi'ii ilaali.",
     profile: "Piroofaayilii", viewProfile: "Piroofaayilii ilaali", editProfile: "Piroofaayilii gulaali",
@@ -586,7 +579,7 @@ const STRINGS = {
     welcomeBack: "እንኳን ደህና መጡ",
     exams: "ፈተናዎች", notes: "ማስታወሻዎች", updates: "ማሻሻያዎች",
     announcements: "ማስታወቂያዎች", recentExamMaterials: "የቅርብ ጊዜ የፈተና ቁሳቁሶች",
-    browseByDepartment: "በትምህርት ክፍል ያስሱ", home: "ቤት", logout: "ውጣ",
+    home: "ቤት", logout: "ውጣ",
     noAnnouncements: "እስካሁን ምንም ማስታወቂያ የለም።", noExamsTitle: "እስካሁን ምንም ፈተና አልተለጠፈም።",
     noExamsSub: "ለአዳዲስ ቁሳቁሶች በኋላ ይመልከቱ።",
     profile: "መገለጫ", viewProfile: "መገለጫ ይመልከቱ", editProfile: "መገለጫ ያስተካክሉ",
@@ -714,7 +707,6 @@ function makeDefaultData() {
     announcements: [],
     noteLinks: {},
     subjects: {},
-    departments: [...DEFAULT_DEPARTMENTS],
     examCategories: {
       "Final exam": [],
       "Mid exam": [],
@@ -743,7 +735,30 @@ function normalizeData(parsed) {
   if (!Array.isArray(parsed.students)) parsed.students = [];
   if (!parsed.noteLinks || typeof parsed.noteLinks !== "object") parsed.noteLinks = {};
   if (!parsed.subjects || typeof parsed.subjects !== "object") parsed.subjects = {};
-  if (!Array.isArray(parsed.departments) || !parsed.departments.length) parsed.departments = [...DEFAULT_DEPARTMENTS];
+  delete parsed.departments;
+  // Legacy data was keyed by department name — flatten everything into one bucket.
+  {
+    const noteKeys = Object.keys(parsed.noteLinks);
+    if (noteKeys.length > 1 || (noteKeys.length === 1 && noteKeys[0] !== NOTES_BUCKET)) {
+      const merged = [];
+      for (const k of noteKeys) if (Array.isArray(parsed.noteLinks[k])) merged.push(...parsed.noteLinks[k]);
+      parsed.noteLinks = { [NOTES_BUCKET]: merged };
+    }
+    const subjKeys = Object.keys(parsed.subjects);
+    if (subjKeys.length > 1 || (subjKeys.length === 1 && subjKeys[0] !== NOTES_BUCKET)) {
+      const merged = [];
+      const seen = new Set();
+      for (const k of subjKeys) {
+        for (const sub of parsed.subjects[k] || []) {
+          const name = String(sub?.name || "").trim();
+          if (!name || seen.has(name.toLowerCase())) continue;
+          seen.add(name.toLowerCase());
+          merged.push(sub);
+        }
+      }
+      parsed.subjects = { [NOTES_BUCKET]: merged };
+    }
+  }
   if (!parsed.examCategories || typeof parsed.examCategories !== "object") {
     parsed.examCategories = { "Final exam": [], "Mid exam": [] };
   }
@@ -1129,7 +1144,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
   const [signupName, setSignupName] = useState("");
   const [signupId, setSignupId] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
-  const [signupDepartment, setSignupDepartment] = useState("");
   const [signupPw, setSignupPw] = useState("");
   const [signupPw2, setSignupPw2] = useState("");
   const [signupErr, setSignupErr] = useState("");
@@ -1139,7 +1153,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
     setSignupName("");
     setSignupId(generateStudentId(data?.students));
     setSignupEmail("");
-    setSignupDepartment("");
     setSignupPw("");
     setSignupPw2("");
     setSignupErr("");
@@ -1160,10 +1173,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
     );
     if (clash) {
       setSignupErr("That Student ID is already taken. Choose another.");
-      return;
-    }
-    if (!signupDepartment) {
-      setSignupErr("Choose your department.");
       return;
     }
     if (signupEmail.trim()) {
@@ -1190,7 +1199,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
       password: signupPw,
       grade: "",
       email: signupEmail.trim(),
-      department: signupDepartment,
       planType: "",
       planPrice: "",
       expiresAt: "",
@@ -1323,7 +1331,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
       email: payload.email,
       googleId: payload.sub,
       authProvider: "google",
-      department: "",
       planType: "",
       planPrice: "",
       expiresAt: "",
@@ -1640,24 +1647,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
               <p className="mb-4 mt-1.5 text-[13px] text-slate-400">
                 Assigned automatically — you'll use this to log in.
               </p>
-
-              <p className="mb-2 text-[15px] font-bold text-slate-900">Department</p>
-              <div className="relative mb-4">
-                <span className="absolute left-2 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EAF0FB] text-[#1141B0]">
-                  <Landmark size={18} />
-                </span>
-                <select
-                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-10 text-[15px] outline-none focus:border-[#1141B0]"
-                  value={signupDepartment}
-                  onChange={(e) => setSignupDepartment(e.target.value)}
-                >
-                  <option value="">Select your department</option>
-                  {departmentsList(data).map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-                <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              </div>
 
               <p className="mb-2 text-[15px] font-bold text-slate-900">Email (optional)</p>
               <div className="relative">
@@ -2625,13 +2614,8 @@ function AdminDashboard({ data, setData, onOpenInApp }) {
   );
 
   const recentNotes = useMemo(() => {
-    const all = [];
-    for (const dept of Object.keys(data.noteLinks)) {
-      for (const n of data.noteLinks[dept] || []) {
-        all.push({ ...n, department: dept });
-      }
-    }
-    return all
+    return notesList(data)
+      .slice()
       .sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
         return new Date(b.createdAt) - new Date(a.createdAt);
@@ -2735,11 +2719,11 @@ function AdminDashboard({ data, setData, onOpenInApp }) {
                 >
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
-                    style={{ background: departmentColor(n.department, data) }}
+                    style={{ background: accentColor(n.title) }}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="truncate text-sm font-semibold text-slate-800">{n.title}</div>
-                    <div className="text-xs text-slate-500">{n.department}</div>
+                    <div className="text-xs text-slate-500">{n.noteType || NOTE_TYPES[0]}</div>
                   </div>
                   <MaterialLink url={n.link} htmlContent={n.htmlContent} htmlUrl={n.htmlUrl} fileName={n.fileName} label="Open" onOpenInApp={onOpenInApp} />
                 </div>
@@ -2763,14 +2747,6 @@ function StudentFormFields({ form, set, data }) {
       <Field label="Student ID">
         <input className={inputCls + " font-semibold tracking-wide text-slate-500"} value={form.studentId} readOnly />
       </Field>
-      <Field label="Department">
-        <select className={inputCls} value={form.department || ""} onChange={set("department")}>
-          <option value="">Not chosen yet (student will pick on first login)</option>
-          {departmentsList(data).map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
-      </Field>
       <Field label="Student password (optional)">
         <input className={inputCls} value={form.password} onChange={set("password")} placeholder="Leave blank for no password" />
       </Field>
@@ -2789,7 +2765,7 @@ function StudentFormFields({ form, set, data }) {
   );
 }
 
-const emptyStudentForm = { name: "", studentId: "", password: "", department: "", planType: "", planPrice: "", expiresAt: "" };
+const emptyStudentForm = { name: "", studentId: "", password: "", planType: "", planPrice: "", expiresAt: "" };
 
 // Used for editing an existing student — opens as a modal popup.
 function StudentForm({ initial, onSave, onClose, data }) {
@@ -3055,7 +3031,6 @@ function AdminStudents({ data, setData }) {
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3 hidden sm:table-cell">Student ID</th>
                 <th className="px-4 py-3 hidden md:table-cell">Grade</th>
-                <th className="px-4 py-3 hidden md:table-cell">Department</th>
                 <th className="px-4 py-3 hidden lg:table-cell">Expires</th>
                 <th className="px-4 py-3 w-20"></th>
               </tr>
@@ -3071,7 +3046,6 @@ function AdminStudents({ data, setData }) {
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell text-slate-500">{s.studentId}</td>
                   <td className="px-4 py-3 hidden md:table-cell text-slate-500">{s.grade || "—"}</td>
-                  <td className="px-4 py-3 hidden md:table-cell text-slate-500">{s.department || "Not chosen"}</td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     {!sub.hasPlan ? (
                       <span className="text-slate-400">No plan set</span>
@@ -3552,7 +3526,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
 
 /* ----------------------------- ADMIN: Notes ----------------------------- */
 
-function NoteLinkForm({ initial, onSave, onClose, department }) {
+function NoteLinkForm({ initial, onSave, onClose, context }) {
   const [form, setForm] = useState(
     initial || { title: "", noteType: NOTE_TYPES[0], link: "", pinned: false, htmlContent: "", htmlUrl: "", fileName: "", isPro: false, subtitle: "", notesCount: "", topicsCount: "", estTime: "", progress: "", topics: [] }
   );
@@ -3562,7 +3536,7 @@ function NoteLinkForm({ initial, onSave, onClose, department }) {
     setForm((f) => ({ ...f, topics: (f.topics || []).map((t, idx) => (idx === i ? { ...t, ...patch } : t)) }));
 
   return (
-    <Modal title={initial ? "Edit note" : `Add note — ${department}`} onClose={onClose}>
+    <Modal title={initial ? "Edit note" : `Add note — ${context}`} onClose={onClose}>
       <Field label="Title">
         <input className={inputCls} value={form.title} onChange={set("title")} placeholder="e.g. Chapter 1" />
       </Field>
@@ -3671,8 +3645,8 @@ function NoteLinkForm({ initial, onSave, onClose, department }) {
 }
 
 /* Shared subject list UI (used by both admin and students). */
-function SubjectGrid({ data, department, notes, subjects, onPick, onBack, admin, onAdd, onEdit, onDelete }) {
-  const color = departmentColor(department, data);
+function SubjectGrid({ notes, subjects, onPick, admin, onAdd, onEdit, onDelete }) {
+  const color = "#2563EB";
   const generalCount = notesForSubject(notes, null).length;
   const rows = [
     ...subjects.map((s) => ({ ...s, general: false })),
@@ -3681,17 +3655,10 @@ function SubjectGrid({ data, department, notes, subjects, onPick, onBack, admin,
 
   return (
     <div className="relative">
-      <button
-        onClick={onBack}
-        className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
-      >
-        ← Back to departments
-      </button>
-
       <div className="mb-4">
         <h3 className="flex items-center gap-2 text-xl font-extrabold text-slate-900">
           <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-          {department}
+          Subjects
         </h3>
         <p className="mt-0.5 pl-5 text-sm text-slate-500">
           {subjects.length} subject{subjects.length === 1 ? "" : "s"}
@@ -3702,7 +3669,7 @@ function SubjectGrid({ data, department, notes, subjects, onPick, onBack, admin,
         <div className="rounded-2xl border border-dashed border-slate-200 py-14 text-center">
           <BookOpen size={28} className="mx-auto mb-3 text-slate-300" />
           <p className="text-sm text-slate-500">
-            {admin ? "No subjects yet — tap + to add one." : "No subjects yet for this department."}
+            {admin ? "No subjects yet — tap + to add one." : "No subjects yet."}
           </p>
         </div>
       ) : (
@@ -3766,10 +3733,10 @@ function SubjectGrid({ data, department, notes, subjects, onPick, onBack, admin,
   );
 }
 
-function SubjectForm({ initial, onSave, onClose, department }) {
+function SubjectForm({ initial, onSave, onClose }) {
   const [name, setName] = useState(initial?.name || "");
   return (
-    <Modal title={initial ? "Edit subject" : `Add subject — ${department}`} onClose={onClose}>
+    <Modal title={initial ? "Edit subject" : "Add subject"} onClose={onClose}>
       <Field label="Subject name">
         <input
           className={inputCls}
@@ -3793,7 +3760,6 @@ function SubjectForm({ initial, onSave, onClose, department }) {
 }
 
 function AdminNotes({ data, setData, onOpenInApp }) {
-  const [department, setDepartment] = useState(null);
   const [subject, setSubject] = useState(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -3802,125 +3768,97 @@ function AdminNotes({ data, setData, onOpenInApp }) {
   const [editingSubject, setEditingSubject] = useState(null);
   const [deletingSubject, setDeletingSubject] = useState(null);
 
-  const departments = departmentsList(data);
+  const getList = () => notesList(data);
 
-  const getList = (dept) => data.noteLinks[dept] || [];
-
-  const setList = (dept, list, logMsg) => {
+  const setList = (list, logMsg) => {
     const next = {
       ...data,
       noteLinks: {
         ...data.noteLinks,
-        [dept]: list,
+        [NOTES_BUCKET]: list,
       },
     };
     setData(logMsg ? withActivity(next, logMsg.action, logMsg.detail) : next);
   };
 
-  const setSubjects = (dept, list, logMsg) => {
+  const setSubjects = (list, logMsg) => {
     const next = {
       ...data,
-      subjects: { ...(data.subjects || {}), [dept]: list },
+      subjects: { ...(data.subjects || {}), [NOTES_BUCKET]: list },
     };
     setData(logMsg ? withActivity(next, logMsg.action, logMsg.detail) : next);
   };
 
   const addSubject = ({ name }) => {
-    const list = subjectsList(data, department);
-    setSubjects(department, [...list, { id: uid("subj"), name, createdAt: new Date().toISOString() }], {
+    const list = subjectsList(data);
+    setSubjects([...list, { id: uid("subj"), name, createdAt: new Date().toISOString() }], {
       action: "Added subject",
-      detail: `${department} — ${name}`,
+      detail: name,
     });
     setAddingSubject(false);
   };
   const saveSubject = ({ name }) => {
-    const list = subjectsList(data, department);
-    setSubjects(department, list.map((s) => (s.id === editingSubject.id ? { ...s, name } : s)), {
+    const list = subjectsList(data);
+    setSubjects(list.map((s) => (s.id === editingSubject.id ? { ...s, name } : s)), {
       action: "Edited subject",
-      detail: `${department} — ${name}`,
+      detail: name,
     });
     setEditingSubject(null);
   };
   const deleteSubject = (s) => {
-    const list = subjectsList(data, department).filter((x) => x.id !== s.id);
-    const notes = getList(department).map((n) => (n.subjectId === s.id ? { ...n, subjectId: null } : n));
+    const list = subjectsList(data).filter((x) => x.id !== s.id);
+    const notes = getList().map((n) => (n.subjectId === s.id ? { ...n, subjectId: null } : n));
     setData(
       withActivity(
         {
           ...data,
-          subjects: { ...(data.subjects || {}), [department]: list },
-          noteLinks: { ...data.noteLinks, [department]: notes },
+          subjects: { ...(data.subjects || {}), [NOTES_BUCKET]: list },
+          noteLinks: { ...data.noteLinks, [NOTES_BUCKET]: notes },
         },
         "Removed subject",
-        `${department} — ${s.name}`
+        s.name
       )
     );
     setDeletingSubject(null);
   };
 
   const addNote = (form) => {
-    const list = getList(department);
+    const list = getList();
     setList(
-      department,
       [...list, { ...form, subjectId: subject?.id || null, id: uid("note"), createdAt: new Date().toISOString() }],
-      { action: "Added note", detail: `${department} — ${form.title}` }
+      { action: "Added note", detail: form.title }
     );
     setAdding(false);
   };
   const saveEdit = (form) => {
-    const list = getList(department);
-    setList(department, list.map((n) => (n.id === editing.id ? { ...n, ...form } : n)), {
+    const list = getList();
+    setList(list.map((n) => (n.id === editing.id ? { ...n, ...form } : n)), {
       action: "Edited note",
-      detail: `${department} — ${form.title}`,
+      detail: form.title,
     });
     setEditing(null);
   };
   const doDelete = (id) => {
-    const list = getList(department);
+    const list = getList();
     const target = list.find((n) => n.id === id);
-    setList(department, list.filter((n) => n.id !== id), {
+    setList(list.filter((n) => n.id !== id), {
       action: "Removed note",
-      detail: `${department} — ${target ? target.title : id}`,
+      detail: target ? target.title : id,
     });
     setConfirmDelete(null);
   };
   const togglePin = (n) => {
-    const list = getList(department);
-    setList(department, list.map((x) => (x.id === n.id ? { ...x, pinned: !x.pinned } : x)));
+    const list = getList();
+    setList(list.map((x) => (x.id === n.id ? { ...x, pinned: !x.pinned } : x)));
   };
 
-  // Level 1: choose a department
-  if (!department) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {departments.map((d) => (
-          <button
-            key={d}
-            onClick={() => { setDepartment(d); setSubject(null); }}
-            className="rounded-2xl border border-slate-200 bg-white p-5 text-left hover:border-sky-300 hover:shadow-sm transition"
-          >
-            <span className="mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: `${departmentColor(d, data)}1A` }}>
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: departmentColor(d, data) }} />
-            </span>
-            <div className="font-semibold text-slate-800">{d}</div>
-            <div className="text-xs text-slate-400">
-              {subjectsList(data, d).length} subject{subjectsList(data, d).length === 1 ? "" : "s"} · {getList(d).length} note{getList(d).length === 1 ? "" : "s"}
-            </div>
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  // Level 2: subjects inside the department
+  // Level 1: subjects
   if (!subject) {
     return (
       <>
         <SubjectGrid
-          data={data}
-          department={department}
-          notes={getList(department)}
-          subjects={subjectsList(data, department)}
+          notes={getList()}
+          subjects={subjectsList(data)}
           admin
           onPick={(s) => setSubject(s)}
           onBack={() => setDepartment(null)}
