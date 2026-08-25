@@ -1940,8 +1940,8 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
 // at a glance, before tapping, that a subscription is required.
 function ProBadge() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
-      <Lock size={10} /> PRO
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
+      <Crown size={11} /> PRO
     </span>
   );
 }
@@ -5782,36 +5782,41 @@ function SubjectListCards({ rows, onPick, title = "Subjects", emptyLabel }) {
 
 function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }) {
   const [expanded, setExpanded] = useState(!!defaultExpanded);
+  const [showAllTopics, setShowAllTopics] = useState(false);
   const topics = chapter.topics || [];
+  const TOPIC_PREVIEW_COUNT = 3;
+  const visibleTopics = showAllTopics ? topics : topics.slice(0, TOPIC_PREVIEW_COUNT);
   const progress = Math.max(0, Math.min(100, parseInt(chapter.progress, 10) || 0));
+  const canExpand =
+    !!(chapter.subtitle || chapter.notesCount || chapter.topicsCount || chapter.estTime || topics.length > 0);
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
-      <div className="flex items-center justify-between gap-2.5">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-50">
-            {locked ? <Lock size={16} className="text-blue-500" /> : <FileText size={16} className="text-sky-600" />}
+    <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50">
+            {locked ? <Lock size={22} className="text-blue-500" /> : <FileText size={22} className="text-blue-600" />}
           </span>
-          <div className="min-w-0">
-            <span className="block truncate text-sm font-bold text-slate-900">{chapter.title}</span>
+          <div className="min-w-0 pt-0.5">
+            <span className="block truncate text-base font-bold text-slate-900">{chapter.title}</span>
             {chapter.subtitle && (
-              <span className="block truncate text-xs text-slate-500">{chapter.subtitle}</span>
+              <span className="block truncate text-sm text-slate-500">{chapter.subtitle}</span>
             )}
             {chapter.isPro && (
-              <span className="mt-1 inline-block">
+              <span className="mt-1.5 inline-block">
                 <ProBadge />
               </span>
             )}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-2">
           {locked ? (
             <button
               type="button"
               onClick={onUnlock}
-              className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-600"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-600"
             >
-              <Lock size={10} /> Unlock
+              <Lock size={12} /> Unlock
             </button>
           ) : (
             <MaterialLink
@@ -5820,51 +5825,51 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
               htmlUrl={chapter.htmlUrl}
               fileName={chapter.fileName}
               label="Open"
-              variant="pill"
+              variant={expanded ? "filled" : "pill"}
               onOpenInApp={onOpenInApp}
             />
           )}
-          {(chapter.subtitle || chapter.notesCount || chapter.topicsCount || chapter.estTime || topics.length > 0) && (
+          {canExpand && (
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
-              {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
           )}
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-3 border-t border-slate-100 pt-3">
+        <div className="mt-4">
           {(chapter.notesCount || chapter.topicsCount || chapter.estTime) && (
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-stretch justify-between gap-1 rounded-2xl bg-slate-50 px-2 py-3.5">
               {chapter.notesCount && (
-                <div className="flex flex-1 items-center gap-1.5">
-                  <FileText size={14} className="shrink-0 text-sky-600" />
+                <div className="flex flex-1 items-center justify-center gap-2 px-1">
+                  <BookOpen size={18} className="shrink-0 text-blue-600" />
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-slate-900">{chapter.notesCount} Notes</div>
-                    <div className="text-[10px] text-slate-400">Available</div>
+                    <div className="text-sm font-bold leading-tight text-slate-900">{chapter.notesCount}</div>
+                    <div className="text-[11px] leading-tight text-slate-400">Notes</div>
                   </div>
                 </div>
               )}
               {chapter.topicsCount && (
-                <div className="flex flex-1 items-center gap-1.5 border-l border-slate-100 pl-2.5">
-                  <BookOpen size={14} className="shrink-0 text-sky-600" />
+                <div className="flex flex-1 items-center justify-center gap-2 border-l border-slate-200 px-1">
+                  <FileText size={18} className="shrink-0 text-blue-600" />
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-slate-900">{chapter.topicsCount} Topics</div>
-                    <div className="text-[10px] text-slate-400">Covered</div>
+                    <div className="text-sm font-bold leading-tight text-slate-900">{chapter.topicsCount}</div>
+                    <div className="text-[11px] leading-tight text-slate-400">Pages</div>
                   </div>
                 </div>
               )}
               {chapter.estTime && (
-                <div className="flex flex-1 items-center gap-1.5 border-l border-slate-100 pl-2.5">
-                  <Clock size={14} className="shrink-0 text-sky-600" />
+                <div className="flex flex-1 items-center justify-center gap-2 border-l border-slate-200 px-1">
+                  <Clock size={18} className="shrink-0 text-blue-600" />
                   <div className="min-w-0">
-                    <div className="text-xs font-bold text-slate-900">{chapter.estTime}</div>
-                    <div className="text-[10px] text-slate-400">Est. time</div>
+                    <div className="text-sm font-bold leading-tight text-slate-900">{chapter.estTime}</div>
+                    <div className="text-[11px] leading-tight text-slate-400">Study time</div>
                   </div>
                 </div>
               )}
@@ -5881,10 +5886,9 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
           )}
 
           {topics.length > 0 && (
-            <div className="mt-3.5">
-              <div className="mb-2 text-xs font-bold text-slate-800">Topics in this chapter</div>
-              <div className="flex flex-col gap-1.5">
-                {topics.map((t) => {
+            <div className="mt-4">
+              <div className="flex flex-col divide-y divide-slate-100 rounded-2xl border border-slate-100">
+                {visibleTopics.map((t) => {
                   const href = !locked ? toEmbeddableUrl(normalizeUrl(t.link)) : null;
                   const clickable = !!href;
                   return (
@@ -5896,26 +5900,39 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
                         if (locked) { onUnlock && onUnlock(); return; }
                         if (href) onOpenInApp(href, t.title);
                       }}
-                      className={`flex items-center justify-between gap-2 rounded-xl border border-slate-100 px-3 py-2.5 text-left ${
+                      className={`flex items-center gap-3 px-3 py-3 text-left first:rounded-t-2xl last:rounded-b-2xl ${
                         clickable || locked ? "hover:bg-slate-50" : "cursor-default"
                       }`}
                     >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
-                        <span className="min-w-0">
-                          <span className="block truncate text-[13px] font-bold text-slate-900">{t.title}</span>
-                          {t.notesCount && (
-                            <span className="block text-[11px] text-slate-400">
-                              {t.notesCount} Note{String(t.notesCount) === "1" ? "" : "s"}
-                            </span>
-                          )}
-                        </span>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                        <FileText size={16} className="text-blue-600" />
                       </span>
-                      <ChevronRight size={15} className="shrink-0 text-slate-300" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold text-slate-900">{t.title}</span>
+                        {t.notesCount && (
+                          <span className="block text-xs text-slate-400">
+                            {t.notesCount} Note{String(t.notesCount) === "1" ? "" : "s"}
+                          </span>
+                        )}
+                      </span>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+                        <ChevronRight size={15} />
+                      </span>
                     </button>
                   );
                 })}
               </div>
+
+              {topics.length > TOPIC_PREVIEW_COUNT && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllTopics((v) => !v)}
+                  className="mt-3 flex w-full items-center justify-center gap-1 py-1 text-sm font-bold text-blue-600 hover:text-blue-700"
+                >
+                  {showAllTopics ? "Show less" : `View all topics (${topics.length})`}
+                  <ChevronDown size={16} className={`transition-transform ${showAllTopics ? "rotate-180" : ""}`} />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -5971,7 +5988,6 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
                 chapter={n}
                 locked={locked}
                 onUnlock={onUnlock}
-                defaultExpanded={i === 0}
                 onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: current.name })}
               />
             );
