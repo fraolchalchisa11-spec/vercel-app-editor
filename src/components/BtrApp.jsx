@@ -5791,32 +5791,32 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
     !!(chapter.subtitle || chapter.notesCount || chapter.topicsCount || chapter.estTime || topics.length > 0);
 
   return (
-    <div className="rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50">
-            {locked ? <Lock size={22} className="text-blue-500" /> : <FileText size={22} className="text-blue-600" />}
+    <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+      <div className="flex items-center justify-between gap-2.5">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50">
+            {locked ? <Lock size={18} className="text-blue-500" /> : <FileText size={18} className="text-blue-600" />}
           </span>
-          <div className="min-w-0 pt-0.5">
-            <span className="block truncate text-base font-bold text-slate-900">{chapter.title}</span>
+          <div className="min-w-0">
+            <span className="block truncate text-sm font-bold text-slate-900">{chapter.title}</span>
             {chapter.subtitle && (
-              <span className="block truncate text-sm text-slate-500">{chapter.subtitle}</span>
+              <span className="block truncate text-xs text-slate-500">{chapter.subtitle}</span>
             )}
             {chapter.isPro && (
-              <span className="mt-1.5 inline-block">
+              <span className="mt-1 inline-block">
                 <ProBadge />
               </span>
             )}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           {locked ? (
             <button
               type="button"
               onClick={onUnlock}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-600"
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-600"
             >
-              <Lock size={12} /> Unlock
+              <Lock size={11} /> Unlock
             </button>
           ) : (
             <MaterialLink
@@ -5834,9 +5834,9 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
-              {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
           )}
         </div>
