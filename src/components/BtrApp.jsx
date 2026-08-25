@@ -11,6 +11,7 @@ import {
   Image as ImageIcon, UploadCloud, Send, Crown, Paperclip,
   Calculator, Briefcase, Code2, Download, MoreVertical, ChevronDown, ArrowLeft,
   BadgePercent, ArrowUp, ArrowDown, Link2, Menu as MenuIcon, SlidersHorizontal, ChevronUp,
+  Brain, Cpu,
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
@@ -3645,6 +3646,31 @@ function NoteLinkForm({ initial, onSave, onClose, context }) {
 }
 
 /* Shared subject list UI (used by both admin and students). */
+// Subjects here are free-text names the admin types in (not the fixed
+// FRESHMAN_SUBJECTS list used for exams), so icons are picked by matching
+// keywords in the name rather than an exact lookup table.
+const SUBJECT_KEYWORD_ICONS = [
+  [/math|calcul|algebra|geometry/i, Calculator],
+  [/physic/i, Atom],
+  [/chem/i, FlaskConical],
+  [/bio(logy)?\b/i, Leaf],
+  [/psycholog/i, Brain],
+  [/logic|critical think/i, Brain],
+  [/emerging tech|technolog|computer|programming/i, Cpu],
+  [/inclusiv|diversity/i, Users],
+  [/anthropolog/i, Globe2],
+  [/geograph/i, Globe2],
+  [/english|language|literature/i, Languages],
+  [/civic|ethic/i, ShieldCheck],
+  [/econom/i, TrendingUp],
+  [/histor/i, BookOpen],
+];
+
+function subjectDisplayIcon(name = "") {
+  const match = SUBJECT_KEYWORD_ICONS.find(([re]) => re.test(name));
+  return match ? match[1] : BookOpen;
+}
+
 function SubjectGrid({ notes, subjects, onPick, admin, onAdd, onEdit, onDelete }) {
   const color = "#2563EB";
   const generalCount = notesForSubject(notes, null).length;
@@ -3655,14 +3681,9 @@ function SubjectGrid({ notes, subjects, onPick, admin, onAdd, onEdit, onDelete }
 
   return (
     <div className="relative">
-      <div className="mb-4">
-        <h3 className="flex items-center gap-2 text-xl font-extrabold text-slate-900">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-          Subjects
-        </h3>
-        <p className="mt-0.5 pl-5 text-sm text-slate-500">
-          {subjects.length} subject{subjects.length === 1 ? "" : "s"}
-        </p>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-xl font-extrabold text-slate-900">Subjects</h3>
+        <span className="text-sm font-bold text-blue-600">{subjects.length} total</span>
       </div>
 
       {rows.length === 0 ? (
@@ -3676,6 +3697,8 @@ function SubjectGrid({ notes, subjects, onPick, admin, onAdd, onEdit, onDelete }
         <div className="flex flex-col gap-3 pb-24">
           {rows.map((s) => {
             const c = subjectCounts(notes, s.id);
+            const total = c.notes + c.resources;
+            const Icon = s.general ? BookOpen : subjectDisplayIcon(s.name);
             return (
               <div
                 key={s.id || "__general"}
@@ -3683,15 +3706,15 @@ function SubjectGrid({ notes, subjects, onPick, admin, onAdd, onEdit, onDelete }
               >
                 <button onClick={() => onPick(s)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                   <span
-                    className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+                    className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
                     style={{ background: `${color}1A` }}
                   >
-                    <Calculator size={26} style={{ color }} />
+                    <Icon size={26} style={{ color }} />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-base font-bold text-slate-900">{s.name}</span>
                     <span className="block text-sm text-slate-500">
-                      {c.notes} note{c.notes === 1 ? "" : "s"} · {c.resources} resource{c.resources === 1 ? "" : "s"}
+                      {total} item{total === 1 ? "" : "s"} available
                     </span>
                   </span>
                 </button>
@@ -5717,34 +5740,40 @@ function mergedSubjects(data) {
 function SubjectListCards({ rows, onPick, title = "Subjects", emptyLabel }) {
   return (
     <div>
-      <div className="mb-2.5 flex items-center justify-between px-1">
-        <h3 className="text-sm font-extrabold text-slate-900">{title}</h3>
-        <span className="text-xs font-semibold text-slate-400">{rows.length} total</span>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-xl font-extrabold text-slate-900">{title}</h3>
+        <span className="text-sm font-bold text-blue-600">{rows.length} total</span>
       </div>
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 py-14 text-center text-sm text-slate-400">
           {emptyLabel}
         </div>
       ) : (
-        <div className="space-y-2">
-          {rows.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => onPick(r)}
-              className="group flex w-full items-center gap-2.5 rounded-2xl bg-white/90 p-2.5 text-left shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:shadow-md"
-            >
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "#E4ECFD" }}>
-                <FileText size={17} style={{ color: "#2563EB" }} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-slate-900">{r.name}</span>
-                <span className="mt-0.5 block text-[11px] font-medium text-slate-400">
-                  {r.count} item{r.count === 1 ? "" : "s"} available
+        <div className="flex flex-col gap-3">
+          {rows.map((r) => {
+            const Icon = r.id === "__general" ? BookOpen : subjectDisplayIcon(r.name);
+            return (
+              <button
+                key={r.id}
+                onClick={() => onPick(r)}
+                className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3.5 text-left shadow-sm transition hover:shadow-md"
+              >
+                <span
+                  className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "#2563EB1A" }}
+                >
+                  <Icon size={26} style={{ color: "#2563EB" }} />
                 </span>
-              </span>
-              <ChevronRight size={16} className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5" />
-            </button>
-          ))}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-bold text-slate-900">{r.name}</span>
+                  <span className="block text-sm text-slate-500">
+                    {r.count} item{r.count === 1 ? "" : "s"} available
+                  </span>
+                </span>
+                <ChevronRight size={20} className="shrink-0 text-slate-400" />
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
