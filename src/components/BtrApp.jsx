@@ -1898,11 +1898,15 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
 
 /* ----------------------------- Link pill ----------------------------- */
 
-function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open material", onOpenInApp, variant = "text" }) {
+function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open material", onOpenInApp, variant = "text", size = "md" }) {
   const pillClass =
-    "shrink-0 whitespace-nowrap rounded-full border border-sky-200 px-4 py-2 text-sm font-bold text-sky-600 transition hover:bg-sky-50";
+    size === "sm"
+      ? "shrink-0 whitespace-nowrap rounded-full border border-sky-200 px-3 py-1 text-xs font-bold text-sky-600 transition hover:bg-sky-50"
+      : "shrink-0 whitespace-nowrap rounded-full border border-sky-200 px-4 py-2 text-sm font-bold text-sky-600 transition hover:bg-sky-50";
   const filledClass =
-    "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
+    size === "sm"
+      ? "shrink-0 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-700"
+      : "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
   const textClass = "inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700 hover:text-sky-800 transition";
   const className = variant === "pill" ? pillClass : variant === "filled" ? filledClass : textClass;
 
@@ -5791,19 +5795,19 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
     !!(chapter.subtitle || chapter.notesCount || chapter.topicsCount || chapter.estTime || topics.length > 0);
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
-      <div className="flex items-center justify-between gap-2.5">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50">
-            {locked ? <Lock size={18} className="text-blue-500" /> : <FileText size={18} className="text-blue-600" />}
+    <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+            {locked ? <Lock size={16} className="text-blue-500" /> : <FileText size={16} className="text-blue-600" />}
           </span>
           <div className="min-w-0">
-            <span className="block truncate text-sm font-bold text-slate-900">{chapter.title}</span>
+            <span className="block truncate text-sm font-bold leading-tight text-slate-900">{chapter.title}</span>
             {chapter.subtitle && (
-              <span className="block truncate text-xs text-slate-500">{chapter.subtitle}</span>
+              <span className="block truncate text-xs leading-tight text-slate-500">{chapter.subtitle}</span>
             )}
             {chapter.isPro && (
-              <span className="mt-1 inline-block">
+              <span className="mt-0.5 inline-block">
                 <ProBadge />
               </span>
             )}
@@ -5814,9 +5818,9 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
             <button
               type="button"
               onClick={onUnlock}
-              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-600"
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
             >
-              <Lock size={11} /> Unlock
+              <Lock size={10} /> Unlock
             </button>
           ) : (
             <MaterialLink
@@ -5826,6 +5830,7 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
               fileName={chapter.fileName}
               label="Open"
               variant={expanded ? "filled" : "pill"}
+              size="sm"
               onOpenInApp={onOpenInApp}
             />
           )}
@@ -5834,16 +5839,16 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
-              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           )}
         </div>
       </div>
 
       {expanded && (
-        <div className="mt-4">
+        <div className="mt-3">
           {(chapter.notesCount || chapter.topicsCount || chapter.estTime) && (
             <div className="flex items-stretch justify-between gap-1 rounded-2xl bg-slate-50 px-2 py-3.5">
               {chapter.notesCount && (
