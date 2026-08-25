@@ -3861,17 +3861,15 @@ function AdminNotes({ data, setData, onOpenInApp }) {
           subjects={subjectsList(data)}
           admin
           onPick={(s) => setSubject(s)}
-          onBack={() => setDepartment(null)}
           onAdd={() => setAddingSubject(true)}
           onEdit={(s) => setEditingSubject(s)}
           onDelete={(s) => setDeletingSubject(s)}
         />
         {addingSubject && (
-          <SubjectForm department={department} onSave={addSubject} onClose={() => setAddingSubject(false)} />
+          <SubjectForm onSave={addSubject} onClose={() => setAddingSubject(false)} />
         )}
         {editingSubject && (
           <SubjectForm
-            department={department}
             initial={editingSubject}
             onSave={saveSubject}
             onClose={() => setEditingSubject(null)}
@@ -3897,7 +3895,7 @@ function AdminNotes({ data, setData, onOpenInApp }) {
   }
 
   // Level 3: list of notes for this subject
-  const sorted = notesForSubject(getList(department), subject.id)
+  const sorted = notesForSubject(getList(), subject.id)
     .slice()
     .sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
@@ -3914,7 +3912,7 @@ function AdminNotes({ data, setData, onOpenInApp }) {
       </button>
       <div className="mb-5 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-base font-bold text-slate-800">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ background: departmentColor(department, data) }} />
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: accentColor(subject.name) }} />
           {subject.name}
         </h3>
         <button
@@ -3968,11 +3966,11 @@ function AdminNotes({ data, setData, onOpenInApp }) {
       )}
 
       {adding && (
-        <NoteLinkForm department={`${department} · ${subject.name}`} onSave={addNote} onClose={() => setAdding(false)} />
+        <NoteLinkForm context={subject.name} onSave={addNote} onClose={() => setAdding(false)} />
       )}
       {editing && (
         <NoteLinkForm
-          department={`${department} · ${subject.name}`}
+          context={subject.name}
           initial={editing}
           onSave={saveEdit}
           onClose={() => setEditing(null)}
@@ -4510,100 +4508,6 @@ function AdminActivityLog({ data, setData }) {
 }
 
 
-function AdminDepartments({ data, setData }) {
-  const [name, setName] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const departments = departmentsList(data);
-
-  const addDepartment = () => {
-    const trimmed = name.trim();
-    if (!trimmed || departments.some((d) => d.toLowerCase() === trimmed.toLowerCase())) return;
-    setData(
-      withActivity(
-        { ...data, departments: [...departments, trimmed] },
-        "Added department",
-        trimmed
-      )
-    );
-    setName("");
-  };
-
-  const removeDepartment = (dept) => {
-    setData(
-      withActivity(
-        { ...data, departments: departments.filter((d) => d !== dept) },
-        "Removed department",
-        dept
-      )
-    );
-    setConfirmDelete(null);
-  };
-
-  return (
-    <div>
-      <div className="mb-5 flex flex-col sm:flex-row gap-2">
-        <input
-          className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-sky-400"
-          placeholder="e.g. Civil Engineering"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addDepartment()}
-        />
-        <button
-          onClick={addDepartment}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shrink-0"
-          style={{ background: 'linear-gradient(to right, #0EA5E9, #2563EB)' }}
-        >
-          <Plus size={16} /> Add department
-        </button>
-      </div>
-
-      {departments.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-14 text-center">
-          <Landmark size={28} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-sm text-slate-500">No departments yet. Add one above.</p>
-        </div>
-      ) : (
-        <div className="grid gap-2 sm:grid-cols-2">
-          {departments.map((d) => {
-            const Icon = departmentIcon(d, data);
-            return (
-              <div
-                key={d}
-                className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                    style={{ background: `${departmentColor(d, data)}1A` }}
-                  >
-                    <Icon size={16} style={{ color: departmentColor(d, data) }} />
-                  </span>
-                  <span className="truncate text-sm font-semibold text-slate-800">{d}</span>
-                </div>
-                {confirmDelete === d ? (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button onClick={() => removeDepartment(d)} className="rounded-lg bg-rose-500 px-2.5 py-1.5 text-xs font-semibold text-white">
-                      Confirm
-                    </button>
-                    <button onClick={() => setConfirmDelete(null)} className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setConfirmDelete(d)} className="shrink-0 text-slate-300 hover:text-rose-500">
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ----------------------------- Admin: subscription requests ----------------------------- */
 
 // A student's studentId may not match an existing record verbatim (they can
@@ -4995,7 +4899,6 @@ function AdminShell({ data, setData, onLogout }) {
     { key: "students", label: "Students", shortLabel: "Students", icon: Users },
     { key: "exams", label: "Exams", shortLabel: "Exams", icon: FileText },
     { key: "notes", label: "Notes", shortLabel: "Notes", icon: StickyNote },
-    { key: "departments", label: "Departments", shortLabel: "Depts", icon: Landmark },
     { key: "activity", label: "Activity log", shortLabel: "Activity", icon: Clock },
     { key: "branding", label: "Branding", shortLabel: "Brand", icon: ImageIcon },
   ];
@@ -5090,7 +4993,6 @@ function AdminShell({ data, setData, onLogout }) {
             {tab === "students" && "Add and manage student records."}
             {tab === "exams" && "Schedule exams and attach study material."}
             {tab === "notes" && "Post notes and link out to study resources."}
-            {tab === "departments" && "Add or remove the departments students and content are organized by."}
             {tab === "activity" && "See who added, edited, or removed content, and when."}
             {tab === "branding" && "Change the logo shown on the sign-in page and throughout the app."}
           </p>
@@ -5102,7 +5004,6 @@ function AdminShell({ data, setData, onLogout }) {
           {tab === "students" && <AdminStudents data={data} setData={setData} />}
           {tab === "exams" && <AdminExams data={data} setData={setData} onOpenInApp={openInApp} />}
           {tab === "notes" && <AdminNotes data={data} setData={setData} onOpenInApp={openInApp} />}
-          {tab === "departments" && <AdminDepartments data={data} setData={setData} />}
           {tab === "activity" && <AdminActivityLog data={data} setData={setData} />}
           {tab === "branding" && (
             <div className="space-y-6">
@@ -5609,50 +5510,6 @@ function PageHeader({
 
 /* ----------------------------- STUDENT: view ----------------------------- */
 
-// Small grid of department cards — shared entry step for both the student
-// exam and note browsers, since students can now look up any department's
-// materials rather than only their own.
-function DepartmentPickerGrid({ data, countFor, onPick, title = "Departments" }) {
-  const departments = departmentsList(data);
-  return (
-    <div>
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h3 className="text-base font-extrabold text-slate-900">{title}</h3>
-        <span className="text-sm font-semibold text-slate-400">{departments.length} total</span>
-      </div>
-      <div className="space-y-3">
-        {departments.map((d) => {
-          const color = departmentColor(d, data);
-          const Icon = departmentIcon(d, data);
-          const count = countFor(d);
-          return (
-            <button
-              key={d}
-              onClick={() => onPick(d)}
-              className="group flex w-full items-center gap-3.5 rounded-3xl bg-white/90 p-3.5 text-left shadow-sm ring-1 ring-black/5 backdrop-blur transition hover:shadow-md"
-            >
-              <span
-                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
-                style={{ background: `${color}1F` }}
-              >
-                <Icon size={22} style={{ color }} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-bold text-slate-900">{d}</span>
-                <span className="mt-0.5 block text-xs font-medium text-slate-400">
-                  {count} item{count === 1 ? "" : "s"} available
-                </span>
-              </span>
-              <ChevronRight size={20} className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5" />
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-
 function FilterSelect({ icon: Icon, value, onChange, children }) {
   return (
     <div className="relative shrink-0">
@@ -5846,20 +5703,13 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 }
 
 function mergedSubjects(data) {
-  const depts = departmentsList(data);
-  const map = new Map();
-  let general = [];
-  for (const d of depts) {
-    const notes = data.noteLinks?.[d] || [];
-    for (const s of subjectsList(data, d)) {
-      const key = s.name.trim().toLowerCase();
-      const prev = map.get(key) || { id: key, name: s.name, notes: [] };
-      prev.notes = [...prev.notes, ...notesForSubject(notes, s.id)];
-      map.set(key, prev);
-    }
-    general = [...general, ...notesForSubject(notes, null)];
-  }
-  const rows = Array.from(map.values());
+  const notes = notesList(data);
+  const rows = subjectsList(data).map((s) => ({
+    id: s.id,
+    name: s.name,
+    notes: notesForSubject(notes, s.id),
+  }));
+  const general = notesForSubject(notes, null);
   if (general.length) rows.push({ id: "__general", name: "General", notes: general });
   return rows;
 }
@@ -6214,13 +6064,6 @@ function ProfileModal({ student, lang, onClose, onSave, theme }) {
               <div className="text-sm font-semibold text-slate-700">{student.grade || "—"}</div>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
-            <Landmark size={17} className="text-slate-400 shrink-0" />
-            <div>
-              <div className="text-xs text-slate-400">Department</div>
-              <div className="text-sm font-semibold text-slate-700">{student.department || "Not chosen"}</div>
-            </div>
-          </div>
           <button
             onClick={() => setMode("edit")}
             className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
@@ -6482,7 +6325,7 @@ function FloatingActionButton({ actions, theme }) {
 
 /* ----------------------------- Search overlay ----------------------------- */
 
-function SearchOverlay({ theme, lang, data, studentDepartment, onClose, onOpenExam, onOpenNote, onOpenAnnouncement }) {
+function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onOpenAnnouncement }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
 
@@ -6496,24 +6339,20 @@ function SearchOverlay({ theme, lang, data, studentDepartment, onClose, onOpenEx
 
     const exams = EXAM_CATEGORIES.flatMap((c) =>
       (data.examCategories[c] || [])
-        .filter((e) => !e.department || e.department === studentDepartment)
         .filter((e) => `${e.title || ""} ${c} ${e.year || ""}`.toLowerCase().includes(q))
         .map((e) => ({ ...e, category: c }))
     ).slice(0, 8);
 
-    const notes = [];
-    for (const n of data.noteLinks[studentDepartment] || []) {
-      if (`${n.title} ${studentDepartment} ${n.noteType || ""}`.toLowerCase().includes(q)) {
-        notes.push({ ...n, department: studentDepartment });
-      }
-    }
+    const notes = notesList(data).filter((n) =>
+      `${n.title} ${n.noteType || ""}`.toLowerCase().includes(q)
+    );
 
     const announcements = (data.announcements || [])
       .filter((a) => `${a.title} ${a.body}`.toLowerCase().includes(q))
       .slice(0, 8);
 
     return { exams, notes: notes.slice(0, 8), announcements };
-  }, [query, data, studentDepartment]);
+  }, [query, data]);
 
   const hasAny = results.exams.length || results.notes.length || results.announcements.length;
 
@@ -6591,7 +6430,7 @@ function SearchOverlay({ theme, lang, data, studentDepartment, onClose, onOpenEx
                       <BookOpen size={16} style={{ color: theme.textSecondary }} className="shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold truncate" style={{ color: theme.textPrimary }}>{n.title}</div>
-                        <div className="text-xs" style={{ color: theme.textMuted }}>{n.department} · {n.noteType || NOTE_TYPES[0]}</div>
+                        <div className="text-xs" style={{ color: theme.textMuted }}>{n.noteType || NOTE_TYPES[0]}</div>
                       </div>
                     </button>
                   ))}
@@ -6624,94 +6463,6 @@ function SearchOverlay({ theme, lang, data, studentDepartment, onClose, onOpenEx
             )}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function DepartmentSelectScreen({ student, data, onSelect, onLogout }) {
-  const [picked, setPicked] = useState(null);
-  const departments = departmentsList(data);
-
-  return (
-    <div className="min-h-screen w-full bg-slate-50">
-      <div className="flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
-        <Brand />
-        <button
-          onClick={onLogout}
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600"
-        >
-          <LogOut size={14} /> Logout
-        </button>
-      </div>
-
-      <div className="mx-auto w-full max-w-sm px-5 py-6">
-        <div
-          className="relative overflow-hidden rounded-2xl p-6 text-white"
-          style={{ background: "linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%)" }}
-        >
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              opacity: 0.08,
-              backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-              backgroundSize: "20px 20px",
-            }}
-          />
-          <div className="relative z-10">
-            <p className="text-sm text-sky-50/90">Welcome, {student.name}</p>
-            <p className="mt-1 text-lg font-bold leading-tight">Choose your department</p>
-            <p className="mt-1 text-sm text-sky-50/80">
-              This decides which exit exam and note materials you'll see.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-3">
-          {departments.map((d) => {
-            const Icon = departmentIcon(d, data);
-            const color = departmentColor(d, data);
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setPicked(d)}
-                className={`flex items-center gap-3 rounded-2xl border bg-white p-4 text-left transition ${
-                  picked === d ? "border-sky-400 ring-2 ring-sky-100" : "border-slate-100 hover:border-slate-200"
-                }`}
-              >
-                <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: `${color}1A` }}
-                >
-                  <Icon size={20} style={{ color }} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-semibold text-slate-900">{d}</span>
-                </span>
-                {picked === d && (
-                  <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white">
-                    <Check size={13} />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        <button
-          type="button"
-          disabled={!picked}
-          onClick={() => picked && onSelect(picked)}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-40"
-          style={{ background: 'linear-gradient(to right, #0EA5E9, #2563EB)', boxShadow: '0 10px 15px -3px rgba(14,165,233,0.2)' }}
-        >
-          Confirm and continue
-          <ArrowRight size={16} />
-        </button>
-        <p className="mt-3 text-center text-xs text-slate-400">
-          This can only be changed later by a BTR admin.
-        </p>
       </div>
     </div>
   );
@@ -6855,7 +6606,7 @@ function SubscriptionScreen({ student, theme, darkMode, onClose }) {
               <div className="divide-y" style={{ borderColor: t.cardBorder }}>
                 {[
                   { icon: User, label: "Student ID", value: student.studentId },
-                  { icon: GraduationCap, label: "Grade / Department", value: [student.grade, student.department].filter(Boolean).join(" · ") || "—" },
+                  { icon: GraduationCap, label: "Grade", value: student.grade || "—" },
                   { icon: CreditCard, label: "Plan type", value: student.planType || "—" },
                   { icon: Sparkles, label: "Plan price", value: student.planPrice ? `${student.planPrice} ETB` : "—" },
                   { icon: Calendar, label: "Expire date", value: student.expiresAt || "Not set" },
@@ -6933,16 +6684,6 @@ function LearningAnalysisScreen({ student, data, theme, darkMode, onClose }) {
       <div className="mx-auto w-full max-w-sm px-5 py-6">
         <h1 className="text-2xl font-bold" style={{ color: t.textPrimary }}>Learning Analysis</h1>
         <p className="mt-1 text-sm" style={{ color: t.textSecondary }}>Track what you've opened and when.</p>
-
-        <div className="mt-5 flex items-center gap-2">
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-full"
-            style={{ background: `${departmentColor(student.department, data)}1A` }}
-          >
-            {React.createElement(departmentIcon(student.department, data), { size: 16, style: { color: departmentColor(student.department, data) } })}
-          </span>
-          <span className="text-sm font-semibold" style={{ color: t.textPrimary }}>{student.department || "No department set"}</span>
-        </div>
 
         <div className="mt-5 flex items-center gap-2">
           <span className="text-sm font-bold" style={{ color: t.textPrimary }}>Overview</span>
@@ -7276,14 +7017,13 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
     );
 
   // Same as openInApp, but first records the open for Learning Analysis.
-  // meta: { type: 'exam' | 'note', department }
+  // meta: { type: 'exam' | 'note' }
   const trackAndOpen = (source, title, meta) => {
     if (meta && setData) {
       const entry = {
         id: uid("act"),
         type: meta.type,
-        department: meta.department || null,
-        title: title || meta.department || (meta.type === "exam" ? "Exam" : "Note"),
+        title: title || (meta.type === "exam" ? "Exam" : "Note"),
         category: meta.category || null,
         at: new Date().toISOString(),
       };
@@ -7338,7 +7078,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
   const animatedNotes = useCountUp(totalNotes);
   const animatedUpdates = useCountUp(myAnnouncements.length);
 
-  // A light "weekly progress" signal: whether the student's department has notes available
+  // A light "weekly progress" signal: whether notes are available
   const weeklyProgress = totalNotes > 0 ? 100 : 0;
 
   const markAllRead = () => {
@@ -7354,17 +7094,6 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
   const totalMaterials = allExams.length + totalNotes;
   const distinctOpened = new Set(myActivity.map((a) => a.title)).size;
   const overallPct = totalMaterials ? Math.min(100, Math.round((distinctOpened / totalMaterials) * 100)) : 0;
-
-  if (!student.department) {
-    return (
-      <DepartmentSelectScreen
-        student={student}
-        data={data}
-        onSelect={(department) => onUpdateStudent({ ...student, department })}
-        onLogout={onLogout}
-      />
-    );
-  }
 
   if (subscription.isExpired) {
     return (
@@ -7718,7 +7447,6 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           theme={theme}
           lang={lang}
           data={data}
-          studentDepartment={student.department}
           onClose={() => setShowSearch(false)}
           onOpenExam={(item) => {
             setShowSearch(false);
@@ -7726,7 +7454,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
               openSubscribeFlow();
               return;
             }
-            const meta = { type: "exam", department: item?.department, category: item?.category };
+            const meta = { type: "exam", category: item?.category };
             if (item?.htmlContent || item?.htmlUrl) {
               trackAndOpen({ htmlContent: item.htmlContent, htmlUrl: item.htmlUrl }, item.fileName || item.title || `${item.category} ${item.year}`, meta);
             } else if (item && normalizeUrl(item.link)) {
@@ -7741,7 +7469,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
               openSubscribeFlow();
               return;
             }
-            const meta = { type: "note", department: item?.department };
+            const meta = { type: "note" };
             if (item?.htmlContent || item?.htmlUrl) {
               trackAndOpen({ htmlContent: item.htmlContent, htmlUrl: item.htmlUrl }, item.fileName || item.title, meta);
             } else if (item && normalizeUrl(item.link)) {
