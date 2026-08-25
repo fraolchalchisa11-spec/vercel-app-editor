@@ -545,7 +545,7 @@ const STRINGS = {
     welcomeBack: "Welcome back",
     exams: "Exams", notes: "Notes", updates: "Updates",
     announcements: "Announcements", recentExamMaterials: "Recent exam materials",
-    browseByDepartment: "Browse by department", home: "Home", logout: "Logout",
+    home: "Home", logout: "Logout",
     noAnnouncements: "No announcements yet.", noExamsTitle: "No exams posted yet.",
     noExamsSub: "Check back later for new materials.",
     profile: "Profile", viewProfile: "View profile", editProfile: "Edit profile",
@@ -562,7 +562,7 @@ const STRINGS = {
     welcomeBack: "Baga deebitan",
     exams: "Qormaata", notes: "Yaadannoo", updates: "Odeeffannoo",
     announcements: "Beeksisa", recentExamMaterials: "Meeshaalee qormaataa haaraa",
-    browseByDepartment: "Gosa barnootaan ilaali", home: "Mana", logout: "Bahi",
+    home: "Mana", logout: "Bahi",
     noAnnouncements: "Hanga ammaatti beeksisni hin jiru.", noExamsTitle: "Qormaanni hin maxxanfamne.",
     noExamsSub: "Boodarra deebi'ii ilaali.",
     profile: "Piroofaayilii", viewProfile: "Piroofaayilii ilaali", editProfile: "Piroofaayilii gulaali",
@@ -579,7 +579,7 @@ const STRINGS = {
     welcomeBack: "እንኳን ደህና መጡ",
     exams: "ፈተናዎች", notes: "ማስታወሻዎች", updates: "ማሻሻያዎች",
     announcements: "ማስታወቂያዎች", recentExamMaterials: "የቅርብ ጊዜ የፈተና ቁሳቁሶች",
-    browseByDepartment: "በትምህርት ክፍል ያስሱ", home: "ቤት", logout: "ውጣ",
+    home: "ቤት", logout: "ውጣ",
     noAnnouncements: "እስካሁን ምንም ማስታወቂያ የለም።", noExamsTitle: "እስካሁን ምንም ፈተና አልተለጠፈም።",
     noExamsSub: "ለአዳዲስ ቁሳቁሶች በኋላ ይመልከቱ።",
     profile: "መገለጫ", viewProfile: "መገለጫ ይመልከቱ", editProfile: "መገለጫ ያስተካክሉ",
@@ -707,7 +707,6 @@ function makeDefaultData() {
     announcements: [],
     noteLinks: {},
     subjects: {},
-    departments: [...DEFAULT_DEPARTMENTS],
     examCategories: {
       "Final exam": [],
       "Mid exam": [],
@@ -736,7 +735,30 @@ function normalizeData(parsed) {
   if (!Array.isArray(parsed.students)) parsed.students = [];
   if (!parsed.noteLinks || typeof parsed.noteLinks !== "object") parsed.noteLinks = {};
   if (!parsed.subjects || typeof parsed.subjects !== "object") parsed.subjects = {};
-  if (!Array.isArray(parsed.departments) || !parsed.departments.length) parsed.departments = [...DEFAULT_DEPARTMENTS];
+  delete parsed.departments;
+  // Legacy data was keyed by department name — flatten everything into one bucket.
+  {
+    const noteKeys = Object.keys(parsed.noteLinks);
+    if (noteKeys.length > 1 || (noteKeys.length === 1 && noteKeys[0] !== NOTES_BUCKET)) {
+      const merged = [];
+      for (const k of noteKeys) if (Array.isArray(parsed.noteLinks[k])) merged.push(...parsed.noteLinks[k]);
+      parsed.noteLinks = { [NOTES_BUCKET]: merged };
+    }
+    const subjKeys = Object.keys(parsed.subjects);
+    if (subjKeys.length > 1 || (subjKeys.length === 1 && subjKeys[0] !== NOTES_BUCKET)) {
+      const merged = [];
+      const seen = new Set();
+      for (const k of subjKeys) {
+        for (const sub of parsed.subjects[k] || []) {
+          const name = String(sub?.name || "").trim();
+          if (!name || seen.has(name.toLowerCase())) continue;
+          seen.add(name.toLowerCase());
+          merged.push(sub);
+        }
+      }
+      parsed.subjects = { [NOTES_BUCKET]: merged };
+    }
+  }
   if (!parsed.examCategories || typeof parsed.examCategories !== "object") {
     parsed.examCategories = { "Final exam": [], "Mid exam": [] };
   }
@@ -1122,7 +1144,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
   const [signupName, setSignupName] = useState("");
   const [signupId, setSignupId] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
-  const [signupDepartment, setSignupDepartment] = useState("");
   const [signupPw, setSignupPw] = useState("");
   const [signupPw2, setSignupPw2] = useState("");
   const [signupErr, setSignupErr] = useState("");
@@ -1132,7 +1153,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
     setSignupName("");
     setSignupId(generateStudentId(data?.students));
     setSignupEmail("");
-    setSignupDepartment("");
     setSignupPw("");
     setSignupPw2("");
     setSignupErr("");
@@ -1153,10 +1173,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
     );
     if (clash) {
       setSignupErr("That Student ID is already taken. Choose another.");
-      return;
-    }
-    if (!signupDepartment) {
-      setSignupErr("Choose your department.");
       return;
     }
     if (signupEmail.trim()) {
@@ -1183,7 +1199,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
       password: signupPw,
       grade: "",
       email: signupEmail.trim(),
-      department: signupDepartment,
       planType: "",
       planPrice: "",
       expiresAt: "",
@@ -1316,7 +1331,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
       email: payload.email,
       googleId: payload.sub,
       authProvider: "google",
-      department: "",
       planType: "",
       planPrice: "",
       expiresAt: "",
@@ -1633,24 +1647,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
               <p className="mb-4 mt-1.5 text-[13px] text-slate-400">
                 Assigned automatically — you'll use this to log in.
               </p>
-
-              <p className="mb-2 text-[15px] font-bold text-slate-900">Department</p>
-              <div className="relative mb-4">
-                <span className="absolute left-2 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#EAF0FB] text-[#1141B0]">
-                  <Landmark size={18} />
-                </span>
-                <select
-                  className="w-full appearance-none rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-10 text-[15px] outline-none focus:border-[#1141B0]"
-                  value={signupDepartment}
-                  onChange={(e) => setSignupDepartment(e.target.value)}
-                >
-                  <option value="">Select your department</option>
-                  {departmentsList(data).map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-                <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              </div>
 
               <p className="mb-2 text-[15px] font-bold text-slate-900">Email (optional)</p>
               <div className="relative">
@@ -2618,13 +2614,8 @@ function AdminDashboard({ data, setData, onOpenInApp }) {
   );
 
   const recentNotes = useMemo(() => {
-    const all = [];
-    for (const dept of Object.keys(data.noteLinks)) {
-      for (const n of data.noteLinks[dept] || []) {
-        all.push({ ...n, department: dept });
-      }
-    }
-    return all
+    return notesList(data)
+      .slice()
       .sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
         return new Date(b.createdAt) - new Date(a.createdAt);
@@ -2728,11 +2719,11 @@ function AdminDashboard({ data, setData, onOpenInApp }) {
                 >
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
-                    style={{ background: departmentColor(n.department, data) }}
+                    style={{ background: accentColor(n.title) }}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="truncate text-sm font-semibold text-slate-800">{n.title}</div>
-                    <div className="text-xs text-slate-500">{n.department}</div>
+                    <div className="text-xs text-slate-500">{n.noteType || NOTE_TYPES[0]}</div>
                   </div>
                   <MaterialLink url={n.link} htmlContent={n.htmlContent} htmlUrl={n.htmlUrl} fileName={n.fileName} label="Open" onOpenInApp={onOpenInApp} />
                 </div>
@@ -2756,14 +2747,6 @@ function StudentFormFields({ form, set, data }) {
       <Field label="Student ID">
         <input className={inputCls + " font-semibold tracking-wide text-slate-500"} value={form.studentId} readOnly />
       </Field>
-      <Field label="Department">
-        <select className={inputCls} value={form.department || ""} onChange={set("department")}>
-          <option value="">Not chosen yet (student will pick on first login)</option>
-          {departmentsList(data).map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
-      </Field>
       <Field label="Student password (optional)">
         <input className={inputCls} value={form.password} onChange={set("password")} placeholder="Leave blank for no password" />
       </Field>
@@ -2782,7 +2765,7 @@ function StudentFormFields({ form, set, data }) {
   );
 }
 
-const emptyStudentForm = { name: "", studentId: "", password: "", department: "", planType: "", planPrice: "", expiresAt: "" };
+const emptyStudentForm = { name: "", studentId: "", password: "", planType: "", planPrice: "", expiresAt: "" };
 
 // Used for editing an existing student — opens as a modal popup.
 function StudentForm({ initial, onSave, onClose, data }) {
@@ -3048,7 +3031,6 @@ function AdminStudents({ data, setData }) {
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3 hidden sm:table-cell">Student ID</th>
                 <th className="px-4 py-3 hidden md:table-cell">Grade</th>
-                <th className="px-4 py-3 hidden md:table-cell">Department</th>
                 <th className="px-4 py-3 hidden lg:table-cell">Expires</th>
                 <th className="px-4 py-3 w-20"></th>
               </tr>
@@ -3064,7 +3046,6 @@ function AdminStudents({ data, setData }) {
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell text-slate-500">{s.studentId}</td>
                   <td className="px-4 py-3 hidden md:table-cell text-slate-500">{s.grade || "—"}</td>
-                  <td className="px-4 py-3 hidden md:table-cell text-slate-500">{s.department || "Not chosen"}</td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     {!sub.hasPlan ? (
                       <span className="text-slate-400">No plan set</span>
