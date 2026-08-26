@@ -4336,7 +4336,7 @@ function AdForm({ initial, onSave, onClose }) {
     }
     setUploading(true);
     try {
-      const url = await uploadImageFile(file, "ads");
+      const url = await uploadImageFile(file, "promo");
       setForm((f) => ({ ...f, imageUrl: url }));
     } catch (e) {
       setError(e?.message || "Couldn't upload that file. Try again.");
@@ -7209,6 +7209,20 @@ function InstallHelpModal({ theme, onClose }) {
   );
 }
 
+// Some browsers (and built-in ad blockers) refuse to load URLs containing an
+// "ads" path segment, which made promo banners look broken. Serve them from a
+// neutral alias path instead.
+function promoImageSrc(url = "") {
+  const u = String(url || "");
+  if (u.startsWith("/api/public/files/ads/")) {
+    return `/api/public/media/promo/${u.slice("/api/public/files/ads/".length)}`;
+  }
+  if (u.startsWith("/api/public/files/")) {
+    return `/api/public/media/${u.slice("/api/public/files/".length)}`;
+  }
+  return u;
+}
+
 function AdCarousel({ ads, theme, darkMode }) {
   const scrollerRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -7246,7 +7260,7 @@ function AdCarousel({ ads, theme, darkMode }) {
               className="relative block shrink-0 overflow-hidden rounded-2xl"
               style={{ scrollSnapAlign: "start", width: "100%" }}
             >
-              <img src={ad.imageUrl} alt={ad.title || "Advertisement"} className="h-32 w-full object-cover sm:h-40" />
+              <img src={promoImageSrc(ad.imageUrl)} alt={ad.title || "BTR"} loading="lazy" className="h-32 w-full object-cover sm:h-40" />
               {(ad.title || ad.subtitle) && (
                 <div
                   className="absolute inset-0 flex flex-col justify-center gap-1 px-5"

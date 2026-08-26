@@ -6,13 +6,13 @@ import InstallPrompt from "@/components/InstallPrompt";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "BTR ትምህርት:Exit Exam Preparation" },
+      { title: "BTR ትምህርት:Freshman" },
       {
         name: "description",
         content:
           "BTR Learning app for students and admins: schedules, study materials, notes, announcements and payments in one place.",
       },
-      { property: "og:title", content: "BTR ትምህርት:Exit Exam Preparation" },
+      { property: "og:title", content: "BTR ትምህርት:Freshman" },
       {
         property: "og:description",
         content:
