@@ -11,7 +11,7 @@ import {
   Image as ImageIcon, UploadCloud, Send, Crown, Paperclip,
   Calculator, Briefcase, Code2, Download, MoreVertical, ChevronDown, ArrowLeft,
   BadgePercent, ArrowUp, ArrowDown, Link2, Menu as MenuIcon, SlidersHorizontal, ChevronUp,
-  Brain, Cpu, ClipboardCheck,
+  Brain, Cpu, ClipboardCheck, HelpCircle,
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
@@ -3295,7 +3295,7 @@ function HtmlUploadField({ fileName, onUpload, onRemove }) {
 
 function ExamYearForm({ initial, onSave, onClose, category, data }) {
   const [form, setForm] = useState(
-    initial || { year: String(currentEthiopianYearGuess()), title: "", subject: "", university: "", link: "", htmlContent: "", htmlUrl: "", fileName: "", isPro: false }
+    initial || { year: String(currentEthiopianYearGuess()), title: "", subject: "", university: "", time: "", questions: "", link: "", htmlContent: "", htmlUrl: "", fileName: "", isPro: false }
   );
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -3333,6 +3333,14 @@ function ExamYearForm({ initial, onSave, onClose, category, data }) {
           placeholder={`e.g. ${category} ${form.year || ""}`}
         />
       </Field>
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <Field label="Time">
+          <input className={inputCls} value={form.time || ""} onChange={set("time")} placeholder="e.g. 3 Hours" />
+        </Field>
+        <Field label="Questions">
+          <input className={inputCls} value={form.questions || ""} onChange={set("questions")} placeholder="e.g. 80" />
+        </Field>
+      </div>
       <Field label="Material link">
         <input
           className={inputCls}
@@ -3511,6 +3519,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
                 </div>
                 <div className="mt-0.5 text-xs text-slate-500">
                   {e.subject || "No subject set"}{e.university ? ` · ${e.university}` : ""} · Year: {e.year}
+                  {e.time ? ` · ${e.time}` : ""}{e.questions ? ` · ${e.questions} Qs` : ""}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -5753,50 +5762,92 @@ function FilterSelect({ icon: Icon, value, onChange, children }) {
   );
 }
 
-function ExamCard({ categoryLabel, subject, title, university, year, isPro, locked, onUnlock, openSlot }) {
+function ExamCard({ categoryLabel, subject, title, university, year, time, questions, isPro, locked, onUnlock, openSlot, defaultExpanded }) {
+  const [expanded, setExpanded] = useState(!!defaultExpanded);
   const SubjectIcon = subjectIcon(subject);
   const color = subjectColor(subject);
+  const canExpand = !!(university || time || questions);
+
   return (
-    <div className="flex items-center justify-between gap-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="flex min-w-0 items-center gap-3.5">
-        <span
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
-          style={{ background: `${color}1A` }}
-        >
-          {locked ? <Lock size={22} className="text-blue-500" /> : <SubjectIcon size={24} style={{ color }} />}
-        </span>
-        <div className="min-w-0">
-          {categoryLabel && (
-            <span className="mb-1 inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-600">
-              {categoryLabel}
-            </span>
-          )}
-          <span className="block truncate text-[15px] font-bold text-slate-900">{title}</span>
-          {university && (
-            <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-slate-500">
-              <Landmark size={13} className="shrink-0 text-slate-400" />
-              {university}
-            </span>
-          )}
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
-              {year}
-            </span>
-            {isPro && <ProBadge />}
+    <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+            style={{ background: `${color}1A` }}
+          >
+            {locked ? <Lock size={16} className="text-blue-500" /> : <SubjectIcon size={16} style={{ color }} />}
+          </span>
+          <div className="min-w-0">
+            {categoryLabel && (
+              <span className="mb-0.5 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                {categoryLabel}
+              </span>
+            )}
+            <span className="block truncate text-sm font-bold leading-tight text-slate-900">{title}</span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                {year}
+              </span>
+              {isPro && <ProBadge />}
+            </div>
           </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {locked ? (
+            <button
+              type="button"
+              onClick={onUnlock}
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
+            >
+              <Lock size={10} /> Unlock
+            </button>
+          ) : (
+            openSlot
+          )}
+          {canExpand && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-label={expanded ? "Collapse" : "Expand"}
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            >
+              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          )}
         </div>
       </div>
 
-      {locked ? (
-        <button
-          type="button"
-          onClick={onUnlock}
-          className="shrink-0 inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-600"
-        >
-          <Lock size={11} /> PRO
-        </button>
-      ) : (
-        openSlot
+      {expanded && canExpand && (
+        <div className="mt-3 flex items-stretch justify-between gap-1 rounded-2xl bg-slate-50 px-2 py-3.5">
+          {university && (
+            <div className="flex flex-1 items-center justify-center gap-2 px-1">
+              <Landmark size={18} className="shrink-0 text-blue-600" />
+              <div className="min-w-0">
+                <div className="text-[11px] leading-tight text-slate-400">University</div>
+                <div className="truncate text-sm font-bold leading-tight text-slate-900">{university}</div>
+              </div>
+            </div>
+          )}
+          {time && (
+            <div className="flex flex-1 items-center justify-center gap-2 border-l border-slate-200 px-1">
+              <Clock size={18} className="shrink-0 text-blue-600" />
+              <div className="min-w-0">
+                <div className="text-[11px] leading-tight text-slate-400">Time</div>
+                <div className="truncate text-sm font-bold leading-tight text-slate-900">{time}</div>
+              </div>
+            </div>
+          )}
+          {questions && (
+            <div className="flex flex-1 items-center justify-center gap-2 border-l border-slate-200 px-1">
+              <HelpCircle size={18} className="shrink-0 text-blue-600" />
+              <div className="min-w-0">
+                <div className="text-[11px] leading-tight text-slate-400">Questions</div>
+                <div className="truncate text-sm font-bold leading-tight text-slate-900">{questions}</div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -5906,6 +5957,8 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
                 title={e.title || `${activeCategory} ${e.year}`}
                 university={e.university}
                 year={e.year}
+                time={e.time}
+                questions={e.questions}
                 isPro={e.isPro}
                 locked={locked}
                 onUnlock={onUnlock}
@@ -5917,6 +5970,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
                     fileName={e.fileName}
                     label="Open"
                     variant="filled"
+                    size="sm"
                     onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "exam", category: activeCategory })}
                   />
                 }
