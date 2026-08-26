@@ -4336,7 +4336,7 @@ function AdForm({ initial, onSave, onClose }) {
     }
     setUploading(true);
     try {
-      const url = await uploadImageFile(file, "ads");
+      const url = await uploadImageFile(file, "promo");
       setForm((f) => ({ ...f, imageUrl: url }));
     } catch (e) {
       setError(e?.message || "Couldn't upload that file. Try again.");
@@ -7260,7 +7260,7 @@ function AdCarousel({ ads, theme, darkMode }) {
               className="relative block shrink-0 overflow-hidden rounded-2xl"
               style={{ scrollSnapAlign: "start", width: "100%" }}
             >
-              <img src={ad.imageUrl} alt={ad.title || "Advertisement"} className="h-32 w-full object-cover sm:h-40" />
+              <img src={promoImageSrc(ad.imageUrl)} alt={ad.title || "BTR"} loading="lazy" className="h-32 w-full object-cover sm:h-40" />
               {(ad.title || ad.subtitle) && (
                 <div
                   className="absolute inset-0 flex flex-col justify-center gap-1 px-5"
