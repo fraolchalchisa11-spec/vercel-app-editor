@@ -7209,6 +7209,20 @@ function InstallHelpModal({ theme, onClose }) {
   );
 }
 
+// Some browsers (and built-in ad blockers) refuse to load URLs containing an
+// "ads" path segment, which made promo banners look broken. Serve them from a
+// neutral alias path instead.
+function promoImageSrc(url = "") {
+  const u = String(url || "");
+  if (u.startsWith("/api/public/files/ads/")) {
+    return `/api/public/media/promo/${u.slice("/api/public/files/ads/".length)}`;
+  }
+  if (u.startsWith("/api/public/files/")) {
+    return `/api/public/media/${u.slice("/api/public/files/".length)}`;
+  }
+  return u;
+}
+
 function AdCarousel({ ads, theme, darkMode }) {
   const scrollerRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(0);
