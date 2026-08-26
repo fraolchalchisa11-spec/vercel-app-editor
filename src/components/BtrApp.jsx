@@ -3423,7 +3423,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
           examCategories: {
             ...data.examCategories,
             [activeCategory]: [
-              ...data.examCategories[activeCategory],
+              ...(data.examCategories[activeCategory] || []),
               { ...form, id: uid("examyr") },
             ],
           },
