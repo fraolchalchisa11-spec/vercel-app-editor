@@ -813,9 +813,10 @@ function normalizeData(parsed) {
     ];
     delete parsed.examCategories["Model exam"];
   }
-  for (const cat of ["Final exam", "Mid exam"]) {
+  for (const cat of EXAM_CATEGORIES) {
     if (!Array.isArray(parsed.examCategories[cat])) parsed.examCategories[cat] = [];
   }
+
   return parsed;
 }
 
@@ -3422,7 +3423,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
           examCategories: {
             ...data.examCategories,
             [activeCategory]: [
-              ...data.examCategories[activeCategory],
+              ...(data.examCategories[activeCategory] || []),
               { ...form, id: uid("examyr") },
             ],
           },
