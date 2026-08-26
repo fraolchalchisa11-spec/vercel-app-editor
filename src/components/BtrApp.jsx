@@ -6005,37 +6005,42 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
           {practiceExams.length > 0 && (
             <div className="mt-4">
               <div className="mb-2 text-xs font-bold text-slate-800">Practice exams</div>
-              <div className="flex flex-col divide-y divide-slate-100 rounded-2xl border border-slate-100">
-                {practiceExams.map((x) => (
-                  <div key={x.id} className="flex items-center gap-3 px-3 py-3 first:rounded-t-2xl last:rounded-b-2xl">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50">
-                      <GraduationCap size={16} className="text-violet-600" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-bold text-slate-900">{x.title || "Practice exam"}</span>
-                    </span>
-                    {locked ? (
-                      <button
-                        type="button"
-                        onClick={onUnlock}
-                        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
-                      >
-                        <Lock size={10} /> Unlock
-                      </button>
-                    ) : (
-                      <MaterialLink
-                        url={x.link}
-                        htmlContent={x.htmlContent}
-                        htmlUrl={x.htmlUrl}
-                        fileName={x.fileName}
-                        label="Open"
-                        variant="pill"
-                        size="sm"
-                        onOpenInApp={(source, title) => onOpenInApp(source, x.title || title)}
-                      />
-                    )}
-                  </div>
-                ))}
+              <div className="flex flex-col gap-2">
+                {practiceExams.map((x) => {
+                  const href = x.htmlContent || x.htmlUrl ? null : normalizeUrl(x.link);
+                  const hasMaterial = !!(x.htmlContent || x.htmlUrl || href);
+                  return (
+                    <button
+                      key={x.id}
+                      type="button"
+                      disabled={!locked && !hasMaterial}
+                      onClick={() => {
+                        if (locked) {
+                          onUnlock();
+                          return;
+                        }
+                        if (x.htmlContent || x.htmlUrl) {
+                          onOpenInApp && onOpenInApp({ htmlContent: x.htmlContent, htmlUrl: x.htmlUrl }, x.title || "Material");
+                        } else if (href) {
+                          onOpenInApp && onOpenInApp(toEmbeddableUrl(href), x.title || "Material");
+                        }
+                      }}
+                      className="flex w-full items-center gap-3 rounded-2xl bg-blue-50 px-4 py-3.5 text-left transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <GraduationCap size={20} className="shrink-0 text-blue-600" />
+                      <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">
+                        {x.title || "Practice exam"}
+                      </span>
+                      {locked ? (
+                        <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600">
+                          <Lock size={10} /> Unlock
+                        </span>
+                      ) : (
+                        <ChevronRight size={18} className="shrink-0 text-blue-500" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
