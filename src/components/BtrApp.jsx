@@ -3533,12 +3533,15 @@ function AdminExams({ data, setData, onOpenInApp }) {
 
 function NoteLinkForm({ initial, onSave, onClose, context }) {
   const [form, setForm] = useState(
-    initial || { title: "", noteType: NOTE_TYPES[0], link: "", pinned: false, htmlContent: "", htmlUrl: "", fileName: "", isPro: false, subtitle: "", notesCount: "", topicsCount: "", estTime: "", progress: "", topics: [] }
+    initial || { title: "", noteType: NOTE_TYPES[0], link: "", pinned: false, htmlContent: "", htmlUrl: "", fileName: "", isPro: false, subtitle: "", notesCount: "", topicsCount: "", estTime: "", progress: "", topics: [], practiceExams: [] }
   );
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const topics = form.topics || [];
   const setTopic = (i, patch) =>
     setForm((f) => ({ ...f, topics: (f.topics || []).map((t, idx) => (idx === i ? { ...t, ...patch } : t)) }));
+  const practiceExams = form.practiceExams || [];
+  const setExam = (i, patch) =>
+    setForm((f) => ({ ...f, practiceExams: (f.practiceExams || []).map((x, idx) => (idx === i ? { ...x, ...patch } : x)) }));
 
   return (
     <Modal title={initial ? "Edit note" : `Add note — ${context}`} onClose={onClose}>
@@ -3549,7 +3552,7 @@ function NoteLinkForm({ initial, onSave, onClose, context }) {
         <input className={inputCls} value={form.subtitle || ""} onChange={set("subtitle")} placeholder="e.g. Introduction to Logic" />
       </Field>
       <div className="mb-4 grid grid-cols-3 gap-2">
-        <Field label="Notes">
+        <Field label="Sections">
           <input className={inputCls} value={form.notesCount || ""} onChange={set("notesCount")} placeholder="12" />
         </Field>
         <Field label="Topics">
@@ -3609,6 +3612,63 @@ function NoteLinkForm({ initial, onSave, onClose, context }) {
                   <div className="col-span-2">
                     <input className={inputCls} value={t.link || ""} onChange={(e) => setTopic(i, { link: e.target.value })} placeholder="Topic link (optional)" />
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mb-4">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-sm font-semibold text-slate-700">Practice exams for this chapter</span>
+          <button
+            type="button"
+            onClick={() =>
+              setForm((f) => ({
+                ...f,
+                practiceExams: [
+                  ...(f.practiceExams || []),
+                  { id: uid(), title: "", link: "", htmlContent: "", htmlUrl: "", fileName: "" },
+                ],
+              }))
+            }
+            className="inline-flex items-center gap-1 rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700"
+          >
+            <Plus size={13} /> Add practice exam
+          </button>
+        </div>
+        {practiceExams.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-slate-200 py-4 text-center text-xs text-slate-400">No practice exams added.</p>
+        ) : (
+          <div className="space-y-2">
+            {practiceExams.map((x, i) => (
+              <div key={x.id || i} className="rounded-xl border border-slate-200 p-2.5">
+                <div className="flex items-center gap-2">
+                  <input className={inputCls} value={x.title} onChange={(e) => setExam(i, { title: e.target.value })} placeholder="Practice exam title" />
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, practiceExams: (f.practiceExams || []).filter((_, idx) => idx !== i) }))}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-500"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+                <div className="mt-2">
+                  <input
+                    className={inputCls}
+                    value={x.link || ""}
+                    onChange={(e) => setExam(i, { link: e.target.value })}
+                    placeholder="Paste PDF, Drive, or video link"
+                    disabled={!!(x.htmlContent || x.htmlUrl)}
+                  />
+                </div>
+                <div className="mt-2">
+                  <HtmlUploadField
+                    fileName={x.fileName}
+                    onUpload={({ htmlUrl, fileName }) => setExam(i, { htmlUrl, htmlContent: "", fileName, link: "" })}
+                    onRemove={() => setExam(i, { htmlContent: "", htmlUrl: "", fileName: "" })}
+                  />
                 </div>
               </div>
             ))}
@@ -5788,6 +5848,7 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
   const [expanded, setExpanded] = useState(!!defaultExpanded);
   const [showAllTopics, setShowAllTopics] = useState(false);
   const topics = chapter.topics || [];
+  const practiceExams = chapter.practiceExams || [];
   const TOPIC_PREVIEW_COUNT = 3;
   const visibleTopics = showAllTopics ? topics : topics.slice(0, TOPIC_PREVIEW_COUNT);
   const progress = Math.max(0, Math.min(100, parseInt(chapter.progress, 10) || 0));
@@ -5856,7 +5917,7 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
                   <BookOpen size={18} className="shrink-0 text-blue-600" />
                   <div className="min-w-0">
                     <div className="text-sm font-bold leading-tight text-slate-900">{chapter.notesCount}</div>
-                    <div className="text-[11px] leading-tight text-slate-400">Notes</div>
+                    <div className="text-[11px] leading-tight text-slate-400">Sections</div>
                   </div>
                 </div>
               )}
@@ -5865,7 +5926,7 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
                   <FileText size={18} className="shrink-0 text-blue-600" />
                   <div className="min-w-0">
                     <div className="text-sm font-bold leading-tight text-slate-900">{chapter.topicsCount}</div>
-                    <div className="text-[11px] leading-tight text-slate-400">Pages</div>
+                    <div className="text-[11px] leading-tight text-slate-400">Topics</div>
                   </div>
                 </div>
               )}
@@ -5938,6 +5999,44 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
                   <ChevronDown size={16} className={`transition-transform ${showAllTopics ? "rotate-180" : ""}`} />
                 </button>
               )}
+            </div>
+          )}
+
+          {practiceExams.length > 0 && (
+            <div className="mt-4">
+              <div className="mb-2 text-xs font-bold text-slate-800">Practice exams</div>
+              <div className="flex flex-col divide-y divide-slate-100 rounded-2xl border border-slate-100">
+                {practiceExams.map((x) => (
+                  <div key={x.id} className="flex items-center gap-3 px-3 py-3 first:rounded-t-2xl last:rounded-b-2xl">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-50">
+                      <GraduationCap size={16} className="text-violet-600" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-bold text-slate-900">{x.title || "Practice exam"}</span>
+                    </span>
+                    {locked ? (
+                      <button
+                        type="button"
+                        onClick={onUnlock}
+                        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
+                      >
+                        <Lock size={10} /> Unlock
+                      </button>
+                    ) : (
+                      <MaterialLink
+                        url={x.link}
+                        htmlContent={x.htmlContent}
+                        htmlUrl={x.htmlUrl}
+                        fileName={x.fileName}
+                        label="Open"
+                        variant="pill"
+                        size="sm"
+                        onOpenInApp={(source, title) => onOpenInApp(source, x.title || title)}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
