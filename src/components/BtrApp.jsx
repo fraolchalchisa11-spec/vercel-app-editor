@@ -11,7 +11,7 @@ import {
   Image as ImageIcon, UploadCloud, Send, Crown, Paperclip,
   Calculator, Briefcase, Code2, Download, MoreVertical, ChevronDown, ArrowLeft,
   BadgePercent, ArrowUp, ArrowDown, Link2, Menu as MenuIcon, SlidersHorizontal, ChevronUp,
-  Brain, Cpu,
+  Brain, Cpu, ClipboardCheck,
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
@@ -385,6 +385,40 @@ function useAuthLogoUrl() {
   return url;
 }
 
+// Note/exam viewer logo — managed separately from the in-app logo and the
+// sign-in logo. Falls back to the main app logo if none is set.
+const VIEWER_LOGO_STORAGE_KEY = "btr-viewer-logo-url";
+
+function setStoredViewerLogo(url) {
+  try {
+    if (url) memoryStorage.setItem(VIEWER_LOGO_STORAGE_KEY, url);
+    else memoryStorage.removeItem(VIEWER_LOGO_STORAGE_KEY);
+  } catch {}
+  try {
+    window.dispatchEvent(new CustomEvent(LOGO_EVENT));
+  } catch {}
+}
+
+function useViewerLogoUrl() {
+  const [url, setUrl] = useState(() => {
+    try {
+      return memoryStorage.getItem(VIEWER_LOGO_STORAGE_KEY) || memoryStorage.getItem(LOGO_STORAGE_KEY) || DEFAULT_LOGO_URL;
+    } catch {
+      return DEFAULT_LOGO_URL;
+    }
+  });
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        setUrl(memoryStorage.getItem(VIEWER_LOGO_STORAGE_KEY) || memoryStorage.getItem(LOGO_STORAGE_KEY) || DEFAULT_LOGO_URL);
+      } catch {}
+    };
+    window.addEventListener(LOGO_EVENT, refresh);
+    return () => window.removeEventListener(LOGO_EVENT, refresh);
+  }, []);
+  return url;
+}
+
 const DEFAULT_SUPPORT_URL = "https://t.me/btrtmhrt_support";
 
 
@@ -698,7 +732,7 @@ const LOCAL_CACHE_KEY = "btr-data";
 
 function makeDefaultData() {
   return {
-    branding: { logoUrl: null, authLogoUrl: null, googleClientId: "", brandName: "" },
+    branding: { logoUrl: null, authLogoUrl: null, viewerLogoUrl: null, googleClientId: "", brandName: "" },
     adminAccount: null,
     adminSession: null,
     studentSessions: {},
@@ -722,9 +756,10 @@ function makeDefaultData() {
 
 function normalizeData(parsed) {
   if (!parsed || typeof parsed !== "object") parsed = makeDefaultData();
-  if (!parsed.branding || typeof parsed.branding !== "object") parsed.branding = { logoUrl: null, authLogoUrl: null, googleClientId: "", brandName: "" };
+  if (!parsed.branding || typeof parsed.branding !== "object") parsed.branding = { logoUrl: null, authLogoUrl: null, viewerLogoUrl: null, googleClientId: "", brandName: "" };
   if (typeof parsed.branding.googleClientId !== "string") parsed.branding.googleClientId = "";
   if (typeof parsed.branding.brandName !== "string") parsed.branding.brandName = "";
+  if (parsed.branding.viewerLogoUrl === undefined) parsed.branding.viewerLogoUrl = null;
   if (!("adminSession" in parsed)) parsed.adminSession = null;
   if (!parsed.studentSessions || typeof parsed.studentSessions !== "object") parsed.studentSessions = {};
   if (!parsed.studentActivity || typeof parsed.studentActivity !== "object") parsed.studentActivity = {};
@@ -2415,7 +2450,7 @@ function ContentRow({ icon: Icon, title, pinned, badges, locked, onUnlock, openS
 /* ----------------------------- In-app HTML viewer ----------------------------- */
 
 function ViewerTopBar({ t, brandName, onClose, isDark, onToggleDark }) {
-  const logoUrl = useLogoUrl();
+  const logoUrl = useViewerLogoUrl();
   return (
     <div style={{ background: t.headerBg }}>
       <div
@@ -2431,15 +2466,12 @@ function ViewerTopBar({ t, brandName, onClose, isDark, onToggleDark }) {
           <ChevronLeft size={20} />
         </button>
 
-        <div className="flex min-w-0 flex-1 flex-col items-start">
+        <div className="flex min-w-0 flex-1 items-center">
           <img
             src={logoUrl}
             alt={brandName || "Logo"}
-            className="h-7 w-7 shrink-0 rounded-full object-cover"
+            className="h-8 w-8 shrink-0 rounded-full object-cover"
           />
-          <span className="max-w-full truncate text-[9px] font-bold leading-tight" style={{ color: t.textPrimary }}>
-            {brandName || "BTR ትምህርት"}
-          </span>
         </div>
 
         {onToggleDark && (
@@ -5259,8 +5291,116 @@ function AdminBranding({ data, setData }) {
       </div>
 
       <AuthLogoCard data={data} setData={setData} />
-      <BrandNameCard data={data} setData={setData} />
+      <ViewerLogoCard data={data} setData={setData} />
       <SupportLinkCard data={data} setData={setData} />
+    </div>
+  );
+}
+
+function ViewerLogoCard({ data, setData }) {
+  const current = data?.branding?.viewerLogoUrl || null;
+  const [preview, setPreview] = useState(current);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFile = async (file) => {
+    setError("");
+    setSaved(false);
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file (PNG, JPG, SVG, etc).");
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setError("That image is too large. Please use one under 1.5MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadImageFile(file, "logos");
+      setPreview(url);
+    } catch (e) {
+      setError(e?.message || "Couldn't upload that file. Try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const save = (value) => {
+    setData(
+      withActivity(
+        { ...data, branding: { ...(data.branding || {}), viewerLogoUrl: value || null } },
+        value ? "Updated note & exam viewer logo" : "Removed note & exam viewer logo",
+        ""
+      )
+    );
+    setStoredViewerLogo(value || null);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  const dirty = preview !== current;
+
+  return (
+    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6">
+      <p className="text-sm font-semibold text-slate-700">Note & exam viewer logo</p>
+      <p className="mt-1 text-xs text-slate-500">
+        Shown at the top of the note & exam viewer, in place of the main app logo. Leave empty to reuse the main app logo.
+      </p>
+
+      <div className="mt-5 flex items-center gap-4">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+          {preview ? (
+            <img src={preview} alt="Viewer logo preview" className="h-full w-full object-contain" />
+          ) : (
+            <ImageIcon size={22} className="text-slate-300" />
+          )}
+        </div>
+        <div className="flex-1">
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            <UploadCloud size={16} /> {uploading ? "Uploading…" : "Choose image"}
+          </button>
+          {preview && (
+            <button
+              type="button"
+              onClick={() => { setPreview(null); save(null); }}
+              className="ml-2 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50"
+            >
+              <Trash2 size={16} /> Remove
+            </button>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+      {saved && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <Check size={16} /> <span>Viewer logo updated.</span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        disabled={!dirty || uploading}
+        onClick={() => save(preview)}
+        className={`mt-5 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition ${dirty && !uploading ? "hover:brightness-105" : "opacity-40 cursor-not-allowed"}`}
+        style={{ background: 'linear-gradient(to right, #0EA5E9, #2563EB)' }}
+      >
+        Save viewer logo
+      </button>
     </div>
   );
 }
@@ -6025,9 +6165,9 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
                           onOpenInApp && onOpenInApp(toEmbeddableUrl(href), x.title || "Material");
                         }
                       }}
-                      className="flex w-full items-center gap-3 rounded-2xl bg-blue-50 px-4 py-3.5 text-left transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex w-full items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3.5 text-left transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <GraduationCap size={20} className="shrink-0 text-blue-600" />
+                      <ClipboardCheck size={20} className="shrink-0 text-blue-600" />
                       <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">
                         {x.title || "Practice exam"}
                       </span>
