@@ -5911,8 +5911,6 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      {!isSubscribed && <UnlockBanner label="exams" onUnlock={onUnlock} />}
-
       <div className="mb-4 grid grid-cols-3 overflow-hidden rounded-2xl border border-blue-200 bg-white">
         {EXAM_CATEGORIES.map((c, i) => {
           const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
@@ -6292,7 +6290,6 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      {!isSubscribed && <UnlockBanner label={`${current.name} notes`} onUnlock={onUnlock} />}
       <button
         onClick={() => setSubject(null)}
         className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
@@ -7762,15 +7759,6 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
             </section>
           )}
         </main>
-
-        <FloatingActionButton
-          theme={theme}
-          actions={[
-            { label: t(lang, "exams"), icon: FileText, color: "#2C7BE5", onClick: () => setTab("exams") },
-            { label: t(lang, "notes"), icon: BookOpen, color: "#059669", onClick: () => setTab("notes") },
-            { label: t(lang, "settings"), icon: SettingsIcon, color: "#7C3AED", onClick: () => setShowSettings(true) },
-          ]}
-        />
 
         {/* Bottom nav */}
         <nav
