@@ -7526,14 +7526,18 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
         .btr-fade-in { animation: fadeSlide 220ms ease-out; }
       `}</style>
       <div
-        className={`min-h-screen w-full max-w-full overflow-x-hidden pb-24 transition-colors duration-300${darkMode ? " dark-mode" : ""}`}
-        style={{
-          background: darkMode
-            ? theme.pageBg
-            : (tab === "exams" || tab === "notes")
-              ? `url(${EXAM_NOTES_BG_URL}) top center / cover no-repeat fixed`
-              : `url(${APP_BG_URL}) top center / cover no-repeat fixed`,
-        }}
+        className={`min-h-screen w-full max-w-full overflow-x-hidden pb-24${darkMode ? " dark-mode" : ""}`}
+        style={
+          darkMode
+            ? { backgroundColor: theme.pageBg }
+            : {
+                backgroundColor: "#0B1220",
+                backgroundImage: `url(${tab === "exams" || tab === "notes" ? EXAM_NOTES_BG_URL : APP_BG_URL})`,
+                backgroundSize: "cover",
+                backgroundPosition: "top center",
+                backgroundRepeat: "no-repeat",
+              }
+        }
       >
 
         {kickedOut && (
