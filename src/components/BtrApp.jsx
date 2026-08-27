@@ -668,14 +668,14 @@ function getTheme(isDark) {
   return isDark
     ? {
         pageBg: "#0B1220",
-        headerBg: "rgba(15,23,42,0.92)",
-        cardBg: "rgba(30,41,59,0.8)",
-        cardBorder: "rgba(51,65,85,0.8)",
+        headerBg: "#0F172A",
+        cardBg: "#1B2537",
+        cardBorder: "#334155",
         dashedBorder: "#334155",
         textPrimary: "#F1F5F9",
         textSecondary: "#94A3B8",
         textMuted: "#64748B",
-        navBg: "rgba(15,23,42,0.92)",
+        navBg: "#0F172A",
         chipBg: "#1E293B",
         chipText: "#CBD5E1",
         chipHover: "#334155",
@@ -718,6 +718,10 @@ function getTheme(isDark) {
 --------------------------------------------------------------------- */
 const DARK_MODE_OVERRIDE_CSS = `
 .dark-mode { color-scheme: dark; }
+/* Android Chrome tears translucent/blurred layers over a scrolling page in
+   dark mode; keep every dark surface opaque and non-blurred. */
+.dark-mode * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.dark-mode .bg-white\/90, .dark-mode .bg-white\/80, .dark-mode .bg-white\/70 { background-color: #1E293B !important; }
 .dark-mode input, .dark-mode select, .dark-mode textarea { color-scheme: dark; }
 
 /* Surfaces */
@@ -787,6 +791,9 @@ const DARK_MODE_OVERRIDE_CSS = `
 .dark-mode .border-rose-200 { border-color: rgba(244,63,94,0.4) !important; }
 .dark-mode .border-blue-100, .dark-mode .border-blue-200 { border-color: rgba(37,99,235,0.4) !important; }
 .dark-mode .hover\\:border-blue-300:hover { border-color: rgba(37,99,235,0.5) !important; }
+
+/* Frosted circular buttons on the home header */
+.dark-mode .btr-glass-btn { background-color: #1E293B !important; }
 
 /* Shadows read as murky on dark surfaces — soften them */
 .dark-mode .shadow, .dark-mode .shadow-sm, .dark-mode .shadow-md,
@@ -7565,7 +7572,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
         {/* Top bar — hidden on the main tabs (they carry their own header) */}
         {tab !== "home" && tab !== "exams" && tab !== "notes" && (
         <header
-          className="sticky top-0 z-10 flex items-center justify-between border-b backdrop-blur-md px-5 py-3.5"
+          className={`sticky top-0 z-10 flex items-center justify-between border-b px-5 py-3.5${darkMode ? "" : " backdrop-blur-md"}`}
           style={{ borderColor: theme.cardBorder, background: theme.headerBg }}
         >
           <Brand darkMode={darkMode} />
@@ -7623,7 +7630,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                 <button
                   onClick={() => setShowSettings(true)}
                   aria-label="Menu"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm"
+                  className="flex h-9 w-9 items-center justify-center rounded-full btr-glass-btn shadow-sm"
                   style={{ color: AUTH_BLUE }}
                 >
                   <MenuIcon size={22} strokeWidth={2.4} />
@@ -7632,7 +7639,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                   <button
                     onClick={() => setShowNotifications(true)}
                     aria-label="Notifications"
-                    className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-full btr-glass-btn shadow-sm"
                     style={{ color: AUTH_BLUE }}
                   >
                     <Bell size={20} />
@@ -7643,7 +7650,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                   <button
                     onClick={() => setShowProfile(true)}
                     aria-label="Profile"
-                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white/90 shadow-sm backdrop-blur-sm ring-2"
+                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full btr-glass-btn shadow-sm ring-2"
                     style={{ borderColor: AUTH_BLUE, color: AUTH_BLUE }}
                   >
                     {student.photo ? (
@@ -7798,7 +7805,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
 
         {/* Bottom nav */}
         <nav
-          className="fixed inset-x-0 bottom-0 z-10 border-t backdrop-blur-md"
+          className={`fixed inset-x-0 bottom-0 z-10 border-t${darkMode ? "" : " backdrop-blur-md"}`}
           style={{ borderColor: theme.cardBorder, background: theme.navBg }}
         >
           <div className="mx-auto grid max-w-3xl grid-cols-4">
