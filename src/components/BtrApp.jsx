@@ -318,105 +318,134 @@ function generateStudentId(students) {
 // login screen can show it live from anywhere without threading `data`
 // through every screen in the tree.
 const LOGO_STORAGE_KEY = "btr-logo-url";
+const LOGO_STORAGE_KEY_DARK = "btr-logo-url-dark";
 const LOGO_EVENT = "btr-logo-updated";
 const DEFAULT_LOGO_URL = HOME_LOGO_URL;
 
-
-function setStoredLogo(url) {
-  try {
-    if (url) memoryStorage.setItem(LOGO_STORAGE_KEY, url);
-    else memoryStorage.removeItem(LOGO_STORAGE_KEY);
-  } catch {}
-  try {
-    window.dispatchEvent(new CustomEvent(LOGO_EVENT));
-  } catch {}
+// Generic helper: store a light/dark pair of image URLs under two keys and
+// broadcast the shared LOGO_EVENT so every <Brand/>-style consumer refreshes.
+function makeStoredLogoPair(lightKey, darkKey) {
+  return function setStoredLogoPair(lightUrl, darkUrl) {
+    try {
+      if (lightUrl) memoryStorage.setItem(lightKey, lightUrl);
+      else memoryStorage.removeItem(lightKey);
+    } catch {}
+    try {
+      if (darkUrl) memoryStorage.setItem(darkKey, darkUrl);
+      else memoryStorage.removeItem(darkKey);
+    } catch {}
+    try {
+      window.dispatchEvent(new CustomEvent(LOGO_EVENT));
+    } catch {}
+  };
 }
 
-function useLogoUrl() {
-  const [logoUrl, setLogoUrl] = useState(() => {
+// Generic hook: reads a light/dark pair of stored logo URLs and returns
+// whichever one matches the current mode, falling back sensibly:
+//   dark mode + no dark logo set -> light logo (better than nothing)
+//   light mode -> light logo (or the provided default)
+function useStoredLogoPair(lightKey, darkKey, fallbackUrl) {
+  const read = () => {
     try {
-      return memoryStorage.getItem(LOGO_STORAGE_KEY) || DEFAULT_LOGO_URL;
+      const light = memoryStorage.getItem(lightKey) || fallbackUrl || null;
+      const dark = memoryStorage.getItem(darkKey) || null;
+      return { light, dark };
     } catch {
-      return DEFAULT_LOGO_URL;
+      return { light: fallbackUrl || null, dark: null };
+    }
+  };
+  const [pair, setPair] = useState(read);
+  useEffect(() => {
+    const refresh = () => setPair(read());
+    window.addEventListener(LOGO_EVENT, refresh);
+    return () => window.removeEventListener(LOGO_EVENT, refresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (darkMode) => (darkMode ? (pair.dark || pair.light) : pair.light);
+}
+
+// Detects the OS/browser's dark-mode preference. Used only on screens that
+// don't have their own theme toggle yet (like the sign-in screen), so an
+// admin-uploaded dark-mode logo still shows up for people whose system is
+// set to dark. Guarded throughout: matchMedia isn't available everywhere.
+function usePrefersDarkSystem() {
+  const [prefersDark, setPrefersDark] = useState(() => {
+    try {
+      return typeof window !== "undefined" && !!window.matchMedia
+        ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        : false;
+    } catch {
+      return false;
     }
   });
   useEffect(() => {
-    const refresh = () => {
-      try {
-        setLogoUrl(memoryStorage.getItem(LOGO_STORAGE_KEY) || DEFAULT_LOGO_URL);
-      } catch {}
-    };
-    window.addEventListener(LOGO_EVENT, refresh);
-    return () => window.removeEventListener(LOGO_EVENT, refresh);
+    let mql;
+    try {
+      if (!window.matchMedia) return;
+      mql = window.matchMedia("(prefers-color-scheme: dark)");
+      const onChange = (e) => setPrefersDark(!!e.matches);
+      mql.addEventListener ? mql.addEventListener("change", onChange) : mql.addListener?.(onChange);
+      return () => {
+        mql.removeEventListener ? mql.removeEventListener("change", onChange) : mql.removeListener?.(onChange);
+      };
+    } catch {
+      return undefined;
+    }
   }, []);
-  return logoUrl;
+  return prefersDark;
+}
+
+function setStoredLogo(url, darkUrl) {
+  makeStoredLogoPair(LOGO_STORAGE_KEY, LOGO_STORAGE_KEY_DARK)(url, darkUrl);
+}
+
+// darkMode defaults to false so existing call sites (that don't know about
+// dark mode) keep getting the light logo, exactly like before.
+function useLogoUrl(darkMode = false) {
+  const pick = useStoredLogoPair(LOGO_STORAGE_KEY, LOGO_STORAGE_KEY_DARK, DEFAULT_LOGO_URL);
+  return pick(darkMode);
 }
 
 // Sign-in / sign-up screen logo — managed separately from the in-app logo.
 const AUTH_LOGO_STORAGE_KEY = "btr-auth-logo-url";
+const AUTH_LOGO_STORAGE_KEY_DARK = "btr-auth-logo-url-dark";
 
-function setStoredAuthLogo(url) {
-  try {
-    if (url) memoryStorage.setItem(AUTH_LOGO_STORAGE_KEY, url);
-    else memoryStorage.removeItem(AUTH_LOGO_STORAGE_KEY);
-  } catch {}
-  try {
-    window.dispatchEvent(new CustomEvent(LOGO_EVENT));
-  } catch {}
+function setStoredAuthLogo(url, darkUrl) {
+  makeStoredLogoPair(AUTH_LOGO_STORAGE_KEY, AUTH_LOGO_STORAGE_KEY_DARK)(url, darkUrl);
 }
 
-function useAuthLogoUrl() {
-  const [url, setUrl] = useState(() => {
-    try {
-      return memoryStorage.getItem(AUTH_LOGO_STORAGE_KEY) || AUTH_LOGO_URL;
-    } catch {
-      return AUTH_LOGO_URL;
-    }
-  });
-  useEffect(() => {
-    const refresh = () => {
-      try {
-        setUrl(memoryStorage.getItem(AUTH_LOGO_STORAGE_KEY) || AUTH_LOGO_URL);
-      } catch {}
-    };
-    window.addEventListener(LOGO_EVENT, refresh);
-    return () => window.removeEventListener(LOGO_EVENT, refresh);
-  }, []);
-  return url;
+function useAuthLogoUrl(darkMode = false) {
+  const pick = useStoredLogoPair(AUTH_LOGO_STORAGE_KEY, AUTH_LOGO_STORAGE_KEY_DARK, AUTH_LOGO_URL);
+  return pick(darkMode);
 }
 
 // Note/exam viewer logo — managed separately from the in-app logo and the
 // sign-in logo. Falls back to the main app logo if none is set.
 const VIEWER_LOGO_STORAGE_KEY = "btr-viewer-logo-url";
+const VIEWER_LOGO_STORAGE_KEY_DARK = "btr-viewer-logo-url-dark";
 
-function setStoredViewerLogo(url) {
-  try {
-    if (url) memoryStorage.setItem(VIEWER_LOGO_STORAGE_KEY, url);
-    else memoryStorage.removeItem(VIEWER_LOGO_STORAGE_KEY);
-  } catch {}
-  try {
-    window.dispatchEvent(new CustomEvent(LOGO_EVENT));
-  } catch {}
+function setStoredViewerLogo(url, darkUrl) {
+  makeStoredLogoPair(VIEWER_LOGO_STORAGE_KEY, VIEWER_LOGO_STORAGE_KEY_DARK)(url, darkUrl);
 }
 
-function useViewerLogoUrl() {
-  const [url, setUrl] = useState(() => {
+function useViewerLogoUrl(darkMode = false) {
+  const read = () => {
     try {
-      return memoryStorage.getItem(VIEWER_LOGO_STORAGE_KEY) || memoryStorage.getItem(LOGO_STORAGE_KEY) || DEFAULT_LOGO_URL;
+      const light = memoryStorage.getItem(VIEWER_LOGO_STORAGE_KEY) || memoryStorage.getItem(LOGO_STORAGE_KEY) || DEFAULT_LOGO_URL;
+      const dark = memoryStorage.getItem(VIEWER_LOGO_STORAGE_KEY_DARK) || memoryStorage.getItem(LOGO_STORAGE_KEY_DARK) || null;
+      return { light, dark };
     } catch {
-      return DEFAULT_LOGO_URL;
+      return { light: DEFAULT_LOGO_URL, dark: null };
     }
-  });
+  };
+  const [pair, setPair] = useState(read);
   useEffect(() => {
-    const refresh = () => {
-      try {
-        setUrl(memoryStorage.getItem(VIEWER_LOGO_STORAGE_KEY) || memoryStorage.getItem(LOGO_STORAGE_KEY) || DEFAULT_LOGO_URL);
-      } catch {}
-    };
+    const refresh = () => setPair(read());
     window.addEventListener(LOGO_EVENT, refresh);
     return () => window.removeEventListener(LOGO_EVENT, refresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  return url;
+  return darkMode ? (pair.dark || pair.light) : pair.light;
 }
 
 const DEFAULT_SUPPORT_URL = "https://t.me/btrtmhrt_support";
@@ -829,7 +858,7 @@ const LOCAL_CACHE_KEY = "btr-data";
 
 function makeDefaultData() {
   return {
-    branding: { logoUrl: null, authLogoUrl: null, viewerLogoUrl: null, googleClientId: "", brandName: "" },
+    branding: { logoUrl: null, logoUrlDark: null, authLogoUrl: null, authLogoUrlDark: null, viewerLogoUrl: null, viewerLogoUrlDark: null, googleClientId: "", brandName: "" },
     adminAccount: null,
     adminSession: null,
     studentSessions: {},
@@ -853,10 +882,13 @@ function makeDefaultData() {
 
 function normalizeData(parsed) {
   if (!parsed || typeof parsed !== "object") parsed = makeDefaultData();
-  if (!parsed.branding || typeof parsed.branding !== "object") parsed.branding = { logoUrl: null, authLogoUrl: null, viewerLogoUrl: null, googleClientId: "", brandName: "" };
+  if (!parsed.branding || typeof parsed.branding !== "object") parsed.branding = { logoUrl: null, logoUrlDark: null, authLogoUrl: null, authLogoUrlDark: null, viewerLogoUrl: null, viewerLogoUrlDark: null, googleClientId: "", brandName: "" };
   if (typeof parsed.branding.googleClientId !== "string") parsed.branding.googleClientId = "";
   if (typeof parsed.branding.brandName !== "string") parsed.branding.brandName = "";
   if (parsed.branding.viewerLogoUrl === undefined) parsed.branding.viewerLogoUrl = null;
+  if (parsed.branding.logoUrlDark === undefined) parsed.branding.logoUrlDark = null;
+  if (parsed.branding.authLogoUrlDark === undefined) parsed.branding.authLogoUrlDark = null;
+  if (parsed.branding.viewerLogoUrlDark === undefined) parsed.branding.viewerLogoUrlDark = null;
   if (!("adminSession" in parsed)) parsed.adminSession = null;
   if (!parsed.studentSessions || typeof parsed.studentSessions !== "object") parsed.studentSessions = {};
   if (!parsed.studentActivity || typeof parsed.studentActivity !== "object") parsed.studentActivity = {};
@@ -999,8 +1031,9 @@ function useStore() {
     latestRef.current = next;
     setDataState(next);
     try { memoryStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(next)); } catch {}
-    if (next.branding?.logoUrl) setStoredLogo(next.branding.logoUrl);
-    if (next.branding?.authLogoUrl) setStoredAuthLogo(next.branding.authLogoUrl);
+    if (next.branding?.logoUrl || next.branding?.logoUrlDark) setStoredLogo(next.branding.logoUrl, next.branding.logoUrlDark);
+    if (next.branding?.authLogoUrl || next.branding?.authLogoUrlDark) setStoredAuthLogo(next.branding.authLogoUrl, next.branding.authLogoUrlDark);
+    if (next.branding?.viewerLogoUrl || next.branding?.viewerLogoUrlDark) setStoredViewerLogo(next.branding.viewerLogoUrl, next.branding.viewerLogoUrlDark);
   };
 
   // Merge our local state with whatever the cloud has right now, then write it back.
@@ -1237,8 +1270,8 @@ function Modal({ title, onClose, children, wide, theme }) {
   );
 }
 
-function Brand() {
-  const logoUrl = useLogoUrl();
+function Brand({ darkMode = false }) {
+  const logoUrl = useLogoUrl(darkMode);
   return (
     <div className="flex items-center gap-2">
       <div
@@ -1259,7 +1292,8 @@ function Brand() {
 /* ----------------------------- Login screen ----------------------------- */
 
 function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup }) {
-  const logoUrl = useAuthLogoUrl();
+  const systemPrefersDark = usePrefersDarkSystem();
+  const logoUrl = useAuthLogoUrl(systemPrefersDark);
   // One shared sign-in form for students and the admin (no role switcher).
   const [idValue, setIdValue] = useState("");
   const [password, setPassword] = useState("");
@@ -2548,7 +2582,7 @@ function ContentRow({ icon: Icon, title, pinned, badges, locked, onUnlock, openS
 /* ----------------------------- In-app HTML viewer ----------------------------- */
 
 function ViewerTopBar({ t, brandName, onClose, isDark, onToggleDark }) {
-  const logoUrl = useViewerLogoUrl();
+  const logoUrl = useViewerLogoUrl(isDark);
   return (
     <div style={{ background: t.headerBg }}>
       <div
@@ -5192,7 +5226,7 @@ function AdminShell({ data, setData, onLogout }) {
         </div>
       )}
       <aside className="hidden lg:flex w-60 flex-col border-r border-slate-200 bg-white p-5">
-        <Brand />
+        <Brand darkMode={adminDark} />
         <nav className="mt-8 flex-1 space-y-1">
           {tabs.map((t) => (
             <button
@@ -5237,7 +5271,7 @@ function AdminShell({ data, setData, onLogout }) {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile top bar */}
         <div className="lg:hidden sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
-          <Brand />
+          <Brand darkMode={adminDark} />
           <div className="flex items-center gap-3">
             <button onClick={() => setAdminDark((v) => !v)} className="text-slate-400">
               {adminDark ? <Sun size={18} /> : <Moon size={18} />}
@@ -5310,352 +5344,220 @@ function AdminShell({ data, setData, onLogout }) {
 
 const MAX_LOGO_BYTES = 1.5 * 1024 * 1024; // ~1.5MB, keeps localStorage usage sane
 
-function AdminBranding({ data, setData }) {
-  const currentLogo = data?.branding?.logoUrl || null;
-  const [preview, setPreview] = useState(currentLogo);
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [uploading, setUploading] = useState(false);
+// One small upload widget (preview + choose/remove) for a single logo slot.
+// Used twice inside LogoSlotCard — once for the light variant, once for dark.
+function LogoUploadSlot({ label, swatchBg, preview, onPick, onRemove, uploading, fit }) {
   const fileInputRef = useRef(null);
-
-  const handleFile = async (file) => {
-    setError("");
-    setSaved(false);
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file (PNG, JPG, SVG, etc).");
-      return;
-    }
-    if (file.size > MAX_LOGO_BYTES) {
-      setError("That image is too large. Please use one under 1.5MB.");
-      return;
-    }
-    setUploading(true);
-    try {
-      const url = await uploadImageFile(file, "logos");
-      setPreview(url);
-    } catch (e) {
-      setError(e?.message || "Couldn't upload that file. Try again.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const saveLogo = () => {
-    setData(
-      withActivity(
-        { ...data, branding: { ...(data.branding || {}), logoUrl: preview || null } },
-        preview ? "Updated app logo" : "Removed app logo",
-        ""
-      )
-    );
-    setStoredLogo(preview || null);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
-
-  const removeLogo = () => {
-    setPreview(null);
-    setData(withActivity({ ...data, branding: { ...(data.branding || {}), logoUrl: null } }, "Removed app logo", ""));
-    setStoredLogo(null);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
-
-  const dirty = preview !== currentLogo;
-
   return (
-    <div className="max-w-lg">
-      <div className="rounded-2xl border border-slate-200 bg-white p-6">
-        <p className="text-sm font-semibold text-slate-700">App logo</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Shown on the sign-in screen and in the header throughout the app. Square images work best.
-        </p>
-
-        <div className="mt-5 flex items-center gap-4">
-          <div
-            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl overflow-hidden border border-slate-200"
-            style={{ background: preview ? "#fff" : "linear-gradient(135deg, #0EA5E9 0%, #2563EB 100%)" }}
-          >
-            {preview ? (
-              <img src={preview} alt="Logo preview" className="h-full w-full object-cover" />
-            ) : (
-              <GraduationCap size={32} strokeWidth={2} className="text-white" />
-            )}
-          </div>
-          <div className="flex-1">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFile(e.target.files?.[0])}
-            />
-            <button
-              type="button"
-              disabled={uploading}
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-            >
-              <UploadCloud size={16} /> {uploading ? "Uploading…" : "Choose image"}
-            </button>
-            {preview && (
-              <button
-                type="button"
-                onClick={removeLogo}
-                className="ml-2 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50"
-              >
-                <Trash2 size={16} /> Remove
-              </button>
-            )}
-          </div>
-        </div>
-
-        {error && (
-          <div className="mt-4 flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
-            <AlertCircle size={16} className="mt-0.5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {saved && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            <Check size={16} /> <span>Logo updated.</span>
-          </div>
-        )}
-
-        <button
-          type="button"
-          disabled={!dirty || uploading}
-          onClick={saveLogo}
-          className={`mt-5 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition ${
-            dirty && !uploading ? "hover:brightness-105" : "opacity-40 cursor-not-allowed"
-          }`}
-          style={{ background: 'linear-gradient(to right, #0EA5E9, #2563EB)' }}
+    <div className="flex-1 min-w-[180px]">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200"
+          style={{ background: swatchBg }}
         >
-          Save logo
-        </button>
+          {preview ? (
+            <img src={preview} alt={`${label} preview`} className={`h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`} />
+          ) : (
+            <ImageIcon size={20} className="text-slate-300" />
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => onPick(e.target.files?.[0])}
+          />
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            <UploadCloud size={13} /> {uploading ? "Uploading…" : "Choose"}
+          </button>
+          {preview && (
+            <button
+              type="button"
+              onClick={onRemove}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-rose-500 hover:bg-rose-50"
+            >
+              <Trash2 size={13} /> Remove
+            </button>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
 
-      <AuthLogoCard data={data} setData={setData} />
-      <ViewerLogoCard data={data} setData={setData} />
+// A full logo-slot card: light + dark variants, shared error/saved state,
+// one Save button. `fit` controls how the preview image is cropped
+// ("cover" for square app icons, "contain" for wordmark-style logos).
+function LogoSlotCard({ title, description, lightUrl, darkUrl, onSave, savedMessage, fit = "cover", className = "" }) {
+  const [previewLight, setPreviewLight] = useState(lightUrl);
+  const [previewDark, setPreviewDark] = useState(darkUrl);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [uploadingLight, setUploadingLight] = useState(false);
+  const [uploadingDark, setUploadingDark] = useState(false);
+
+  const handleFile = async (file, which) => {
+    setError("");
+    setSaved(false);
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file (PNG, JPG, SVG, etc).");
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setError("That image is too large. Please use one under 1.5MB.");
+      return;
+    }
+    const setUploading = which === "dark" ? setUploadingDark : setUploadingLight;
+    setUploading(true);
+    try {
+      const url = await uploadImageFile(file, "logos");
+      if (which === "dark") setPreviewDark(url);
+      else setPreviewLight(url);
+    } catch (e) {
+      setError(e?.message || "Couldn't upload that file. Try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const dirty = previewLight !== lightUrl || previewDark !== darkUrl;
+
+  const save = () => {
+    onSave(previewLight || null, previewDark || null);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  return (
+    <div className={`rounded-2xl border border-slate-200 bg-white p-6 ${className}`}>
+      <p className="text-sm font-semibold text-slate-700">{title}</p>
+      <p className="mt-1 text-xs text-slate-500">{description}</p>
+
+      <div className="mt-5 flex flex-wrap gap-6">
+        <LogoUploadSlot
+          label="Light mode"
+          swatchBg="#fff"
+          preview={previewLight}
+          onPick={(f) => handleFile(f, "light")}
+          onRemove={() => { setPreviewLight(null); setError(""); setSaved(false); }}
+          uploading={uploadingLight}
+          fit={fit}
+        />
+        <LogoUploadSlot
+          label="Dark mode"
+          swatchBg="#0B1220"
+          preview={previewDark}
+          onPick={(f) => handleFile(f, "dark")}
+          onRemove={() => { setPreviewDark(null); setError(""); setSaved(false); }}
+          uploading={uploadingDark}
+          fit={fit}
+        />
+      </div>
+      <p className="mt-3 text-[11px] text-slate-400">
+        Leave "Dark mode" empty to reuse the light logo when a student or admin switches to dark mode.
+      </p>
+
+      {error && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {saved && (
+        <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <Check size={16} /> <span>{savedMessage || "Logo updated."}</span>
+        </div>
+      )}
+
+      <button
+        type="button"
+        disabled={!dirty || uploadingLight || uploadingDark}
+        onClick={save}
+        className={`mt-5 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition ${
+          dirty && !uploadingLight && !uploadingDark ? "hover:brightness-105" : "opacity-40 cursor-not-allowed"
+        }`}
+        style={{ background: "linear-gradient(to right, #0EA5E9, #2563EB)" }}
+      >
+        Save {title.toLowerCase()}
+      </button>
+    </div>
+  );
+}
+
+function AdminBranding({ data, setData }) {
+  const saveMainLogo = (light, dark) => {
+    setData(
+      withActivity(
+        { ...data, branding: { ...(data.branding || {}), logoUrl: light, logoUrlDark: dark } },
+        light || dark ? "Updated app logo" : "Removed app logo",
+        ""
+      )
+    );
+    setStoredLogo(light, dark);
+  };
+
+  const saveAuthLogo = (light, dark) => {
+    setData(
+      withActivity(
+        { ...data, branding: { ...(data.branding || {}), authLogoUrl: light, authLogoUrlDark: dark } },
+        light || dark ? "Updated sign-in logo" : "Removed sign-in logo",
+        ""
+      )
+    );
+    setStoredAuthLogo(light, dark);
+  };
+
+  const saveViewerLogo = (light, dark) => {
+    setData(
+      withActivity(
+        { ...data, branding: { ...(data.branding || {}), viewerLogoUrl: light, viewerLogoUrlDark: dark } },
+        light || dark ? "Updated note & exam viewer logo" : "Removed note & exam viewer logo",
+        ""
+      )
+    );
+    setStoredViewerLogo(light, dark);
+  };
+
+  return (
+    <div className="max-w-2xl space-y-5">
+      <LogoSlotCard
+        title="App logo"
+        description="Shown in the header throughout the app. Square images work best."
+        lightUrl={data?.branding?.logoUrl || null}
+        darkUrl={data?.branding?.logoUrlDark || null}
+        onSave={saveMainLogo}
+        savedMessage="App logo updated."
+        fit="cover"
+      />
+      <LogoSlotCard
+        title="Sign-in / sign-up logo"
+        description="Shown only on the sign-in and sign-up screens, before anyone has a theme preference saved — this one follows the visitor's device/browser dark-mode setting."
+        lightUrl={data?.branding?.authLogoUrl || null}
+        darkUrl={data?.branding?.authLogoUrlDark || null}
+        onSave={saveAuthLogo}
+        savedMessage="Sign-in logo updated."
+        fit="contain"
+      />
+      <LogoSlotCard
+        title="Note & exam viewer logo"
+        description="Shown at the top of the note & exam viewer, in place of the main app logo. Leave empty to reuse the app logo above."
+        lightUrl={data?.branding?.viewerLogoUrl || null}
+        darkUrl={data?.branding?.viewerLogoUrlDark || null}
+        onSave={saveViewerLogo}
+        savedMessage="Viewer logo updated."
+        fit="contain"
+      />
       <SupportLinkCard data={data} setData={setData} />
-    </div>
-  );
-}
-
-function ViewerLogoCard({ data, setData }) {
-  const current = data?.branding?.viewerLogoUrl || null;
-  const [preview, setPreview] = useState(current);
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleFile = async (file) => {
-    setError("");
-    setSaved(false);
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file (PNG, JPG, SVG, etc).");
-      return;
-    }
-    if (file.size > MAX_LOGO_BYTES) {
-      setError("That image is too large. Please use one under 1.5MB.");
-      return;
-    }
-    setUploading(true);
-    try {
-      const url = await uploadImageFile(file, "logos");
-      setPreview(url);
-    } catch (e) {
-      setError(e?.message || "Couldn't upload that file. Try again.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const save = (value) => {
-    setData(
-      withActivity(
-        { ...data, branding: { ...(data.branding || {}), viewerLogoUrl: value || null } },
-        value ? "Updated note & exam viewer logo" : "Removed note & exam viewer logo",
-        ""
-      )
-    );
-    setStoredViewerLogo(value || null);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
-
-  const dirty = preview !== current;
-
-  return (
-    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6">
-      <p className="text-sm font-semibold text-slate-700">Note & exam viewer logo</p>
-      <p className="mt-1 text-xs text-slate-500">
-        Shown at the top of the note & exam viewer, in place of the main app logo. Leave empty to reuse the main app logo.
-      </p>
-
-      <div className="mt-5 flex items-center gap-4">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-          {preview ? (
-            <img src={preview} alt="Viewer logo preview" className="h-full w-full object-contain" />
-          ) : (
-            <ImageIcon size={22} className="text-slate-300" />
-          )}
-        </div>
-        <div className="flex-1">
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
-          <button
-            type="button"
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-          >
-            <UploadCloud size={16} /> {uploading ? "Uploading…" : "Choose image"}
-          </button>
-          {preview && (
-            <button
-              type="button"
-              onClick={() => { setPreview(null); save(null); }}
-              className="ml-2 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50"
-            >
-              <Trash2 size={16} /> Remove
-            </button>
-          )}
-        </div>
-      </div>
-
-      {error && (
-        <div className="mt-4 flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-      {saved && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          <Check size={16} /> <span>Viewer logo updated.</span>
-        </div>
-      )}
-
-      <button
-        type="button"
-        disabled={!dirty || uploading}
-        onClick={() => save(preview)}
-        className={`mt-5 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition ${dirty && !uploading ? "hover:brightness-105" : "opacity-40 cursor-not-allowed"}`}
-        style={{ background: 'linear-gradient(to right, #0EA5E9, #2563EB)' }}
-      >
-        Save viewer logo
-      </button>
-    </div>
-  );
-}
-
-function AuthLogoCard({ data, setData }) {
-  const current = data?.branding?.authLogoUrl || null;
-  const [preview, setPreview] = useState(current);
-  const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const handleFile = async (file) => {
-    setError("");
-    setSaved(false);
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file (PNG, JPG, SVG, etc).");
-      return;
-    }
-    if (file.size > MAX_LOGO_BYTES) {
-      setError("That image is too large. Please use one under 1.5MB.");
-      return;
-    }
-    setUploading(true);
-    try {
-      const url = await uploadImageFile(file, "logos");
-      setPreview(url);
-    } catch (e) {
-      setError(e?.message || "Couldn't upload that file. Try again.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const save = (value) => {
-    setData(
-      withActivity(
-        { ...data, branding: { ...(data.branding || {}), authLogoUrl: value || null } },
-        value ? "Updated sign-in logo" : "Removed sign-in logo",
-        ""
-      )
-    );
-    setStoredAuthLogo(value || null);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
-
-  const dirty = preview !== current;
-
-  return (
-    <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6">
-      <p className="text-sm font-semibold text-slate-700">Sign-in / sign-up logo</p>
-      <p className="mt-1 text-xs text-slate-500">
-        Shown only on the sign-in and sign-up screens. The logo above is used on the home screen and in-app.
-      </p>
-
-      <div className="mt-5 flex items-center gap-4">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-          {preview ? (
-            <img src={preview} alt="Sign-in logo preview" className="h-full w-full object-contain" />
-          ) : (
-            <ImageIcon size={22} className="text-slate-300" />
-          )}
-        </div>
-        <div className="flex-1">
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
-          <button
-            type="button"
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-          >
-            <UploadCloud size={16} /> {uploading ? "Uploading…" : "Choose image"}
-          </button>
-          {preview && (
-            <button
-              type="button"
-              onClick={() => { setPreview(null); save(null); }}
-              className="ml-2 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-500 hover:bg-rose-50"
-            >
-              <Trash2 size={16} /> Remove
-            </button>
-          )}
-        </div>
-      </div>
-
-      {error && (
-        <div className="mt-4 flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-      {saved && (
-        <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-          <Check size={16} /> <span>Sign-in logo updated.</span>
-        </div>
-      )}
-
-      <button
-        type="button"
-        disabled={!dirty || uploading}
-        onClick={() => save(preview)}
-        className={`mt-5 w-full rounded-xl py-2.5 text-sm font-semibold text-white transition ${dirty && !uploading ? "hover:brightness-105" : "opacity-40 cursor-not-allowed"}`}
-        style={{ background: 'linear-gradient(to right, #0EA5E9, #2563EB)' }}
-      >
-        Save sign-in logo
-      </button>
     </div>
   );
 }
@@ -6972,7 +6874,7 @@ function SubscriptionScreen({ student, theme, darkMode, onClose }) {
         <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: t.chipBg, color: t.textSecondary }}>
           <ChevronLeft size={18} />
         </button>
-        <Brand />
+        <Brand darkMode={darkMode} />
       </div>
 
       <div className="mx-auto w-full max-w-sm px-5 py-6">
@@ -7161,7 +7063,7 @@ function LearningAnalysisScreen({ student, data, theme, darkMode, onClose }) {
         <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: t.chipBg, color: t.textSecondary }}>
           <ChevronLeft size={18} />
         </button>
-        <Brand />
+        <Brand darkMode={darkMode} />
       </div>
 
       <div className="mx-auto w-full max-w-sm px-5 py-6">
@@ -7229,7 +7131,7 @@ function ExpiredGateScreen({ student, theme, darkMode, onLogout, onViewSubscript
     <div className={`min-h-screen w-full${darkMode ? " dark-mode" : ""}`} style={{ background: t.pageBg }}>
       <GlobalDarkStyles />
       <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: t.cardBorder, background: t.headerBg }}>
-        <Brand />
+        <Brand darkMode={darkMode} />
         <button onClick={onLogout} className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: t.textSecondary }}>
           <LogOut size={14} /> Logout
         </button>
@@ -7465,7 +7367,6 @@ function AnnouncementsModal({ theme, lang, darkMode, announcements, expandedId, 
 
 
 function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
-  const homeLogoUrl = useLogoUrl();
   const [tab, setTab] = useState("home"); // home | exams | notes
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -7491,6 +7392,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
   const lang = prefs.language || "en";
   const darkMode = prefs.theme === "dark";
   const theme = getTheme(darkMode);
+  const homeLogoUrl = useLogoUrl(darkMode);
   const subscription = getSubscriptionStatus(student);
 
   // Multi-device detection: if this Student ID signs in on another device
@@ -7662,7 +7564,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           className="sticky top-0 z-10 flex items-center justify-between border-b backdrop-blur-md px-5 py-3.5"
           style={{ borderColor: theme.cardBorder, background: theme.headerBg }}
         >
-          <Brand />
+          <Brand darkMode={darkMode} />
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSearch(true)}
@@ -8130,7 +8032,85 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
 
 /* ----------------------------- Root app ----------------------------- */
 
-export default function App() {
+/* ---------------------------------------------------------------------
+   Top-level error boundary.
+
+   Previously, a single uncaught render error anywhere in the tree (in
+   either theme) tore down the whole app to a blank white screen with no
+   way back in — which is what "the app crashes" usually looks like from
+   the outside. Dark mode touches far more of the codebase than light
+   mode (every screen's `darkMode ? a : b` branch, plus the CSS override
+   pass in GlobalDarkStyles), so it's the more likely place to hit an
+   edge case that light mode never exercises.
+
+   This doesn't fix any specific bug — it stops one bad render from
+   nuking the session, offers a reload, and (since most of these will be
+   theme-shaped bugs) an explicit "switch to light mode" escape hatch so
+   the person isn't stuck.
+--------------------------------------------------------------------- */
+class AppErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  componentDidCatch(error, info) {
+    // Keep a breadcrumb in the console so this is debuggable later;
+    // never let logging itself throw.
+    try { console.error("BTR app crashed:", error, info); } catch {}
+  }
+  handleReload = () => {
+    try { window.location.reload(); } catch {}
+  };
+  handleForceLight = () => {
+    // Best-effort: clear every prefs key so no student profile can be
+    // stuck reopening straight into whatever broke, then reload.
+    try {
+      const keysToClear = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith("btr-prefs-")) keysToClear.push(k);
+      }
+      keysToClear.forEach((k) => window.localStorage.removeItem(k));
+      window.localStorage.removeItem("btr-admin-theme");
+    } catch {}
+    this.handleReload();
+  };
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white px-6">
+          <div className="w-full max-w-sm text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-rose-500">
+              <AlertCircle size={26} />
+            </div>
+            <h1 className="text-lg font-bold text-slate-900">Something went wrong</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              The app hit an unexpected error and couldn't continue. Reloading usually fixes it.
+            </p>
+            <button
+              onClick={this.handleReload}
+              className="mt-5 w-full rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
+            >
+              Reload
+            </button>
+            <button
+              onClick={this.handleForceLight}
+              className="mt-2 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+            >
+              Reload in light mode
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function AppInner() {
   const { data, setData, loading, error } = useStore();
   const [session, setSession] = useState(null); // { role: 'admin' } | { role: 'student', student }
   const restoredRef = useRef(false);
@@ -8286,6 +8266,14 @@ export default function App() {
       }}
 
     />
+  );
+}
+
+export default function App() {
+  return (
+    <AppErrorBoundary>
+      <AppInner />
+    </AppErrorBoundary>
   );
 }
 
