@@ -673,6 +673,103 @@ function getTheme(isDark) {
       };
 }
 
+/* ---------------------------------------------------------------------
+   Global dark-mode override stylesheet.
+
+   Most of the app already ports its colors through `theme`/`darkMode`
+   props (see getTheme above). The admin panel — and a handful of older
+   student-side spots — was written before that pattern existed and
+   still uses static light-only Tailwind utility classes (bg-white,
+   text-slate-900, border-slate-200, ...). Rewriting every one of those
+   className strings is a lot of surface area for very little benefit,
+   so instead: any subtree wrapped in a `.dark-mode` ancestor class gets
+   these utility classes re-pointed to dark-appropriate colors via plain
+   CSS. This mirrors what the JS theme tokens already use, so the two
+   systems land on the same palette. Rendered once via <GlobalDarkStyles/>.
+--------------------------------------------------------------------- */
+const DARK_MODE_OVERRIDE_CSS = `
+.dark-mode { color-scheme: dark; }
+.dark-mode input, .dark-mode select, .dark-mode textarea { color-scheme: dark; }
+
+/* Surfaces */
+.dark-mode .bg-white { background-color: #1E293B !important; }
+.dark-mode .bg-slate-50 { background-color: #0F172A !important; }
+.dark-mode .bg-slate-100 { background-color: #1E293B !important; }
+.dark-mode .bg-slate-200 { background-color: #334155 !important; }
+.dark-mode .hover\\:bg-slate-50:hover { background-color: rgba(148,163,184,0.08) !important; }
+.dark-mode .hover\\:bg-slate-100:hover { background-color: #334155 !important; }
+.dark-mode .hover\\:bg-slate-200:hover { background-color: #475569 !important; }
+.dark-mode .hover\\:bg-white:hover { background-color: #334155 !important; }
+
+/* Primary dark CTA buttons (bg-slate-900 + text-white) invert to a light button in dark mode */
+.dark-mode .bg-slate-900.text-white { background-color: #F1F5F9 !important; color: #0B1220 !important; }
+.dark-mode .bg-slate-900.text-white:hover { background-color: #E2E8F0 !important; }
+
+/* Text */
+.dark-mode .text-slate-900 { color: #F1F5F9 !important; }
+.dark-mode .text-slate-800 { color: #E2E8F0 !important; }
+.dark-mode .text-slate-700 { color: #CBD5E1 !important; }
+.dark-mode .text-slate-600 { color: #B4C0D3 !important; }
+.dark-mode .text-slate-500 { color: #94A3B8 !important; }
+.dark-mode .text-slate-400 { color: #64748B !important; }
+.dark-mode .text-slate-300 { color: #475569 !important; }
+.dark-mode .hover\\:text-slate-600:hover { color: #CBD5E1 !important; }
+.dark-mode .hover\\:text-slate-700:hover { color: #E2E8F0 !important; }
+.dark-mode .placeholder-slate-400::placeholder { color: #64748B !important; }
+
+/* Borders / dividers / rings */
+.dark-mode .border-slate-100 { border-color: rgba(148,163,184,0.15) !important; }
+.dark-mode .border-slate-200 { border-color: #334155 !important; }
+.dark-mode .border-slate-300 { border-color: #475569 !important; }
+.dark-mode .divide-slate-100 > * + * { border-color: rgba(148,163,184,0.15) !important; }
+.dark-mode .ring-slate-100 { --tw-ring-color: rgba(148,163,184,0.15) !important; }
+.dark-mode .ring-white { --tw-ring-color: rgba(11,18,32,0.9) !important; }
+.dark-mode .focus\\:ring-sky-100:focus { --tw-ring-color: rgba(56,189,248,0.35) !important; }
+
+/* Accent text (brighten saturated colors that assumed a white backdrop) */
+.dark-mode .text-sky-600, .dark-mode .text-sky-700 { color: #7DD3FC !important; }
+.dark-mode .text-blue-400, .dark-mode .text-blue-500, .dark-mode .text-blue-600,
+.dark-mode .text-blue-700, .dark-mode .text-blue-800 { color: #93C5FD !important; }
+.dark-mode .text-amber-500, .dark-mode .text-amber-600, .dark-mode .text-amber-700 { color: #FCD34D !important; }
+.dark-mode .hover\\:text-amber-500:hover { color: #FCD34D !important; }
+.dark-mode .text-emerald-500, .dark-mode .text-emerald-600, .dark-mode .text-emerald-700 { color: #6EE7B7 !important; }
+.dark-mode .text-rose-500, .dark-mode .text-rose-600, .dark-mode .text-rose-700 { color: #FDA4AF !important; }
+.dark-mode .hover\\:text-rose-500:hover { color: #FDA4AF !important; }
+
+/* Soft tinted badge / pill backgrounds */
+.dark-mode .bg-sky-50 { background-color: rgba(14,165,233,0.15) !important; }
+.dark-mode .bg-sky-100 { background-color: rgba(14,165,233,0.2) !important; }
+.dark-mode .hover\\:bg-sky-50:hover { background-color: rgba(14,165,233,0.2) !important; }
+.dark-mode .bg-blue-50 { background-color: rgba(37,99,235,0.15) !important; }
+.dark-mode .bg-blue-100 { background-color: rgba(37,99,235,0.2) !important; }
+.dark-mode .bg-rose-50 { background-color: rgba(244,63,94,0.15) !important; }
+.dark-mode .bg-rose-100 { background-color: rgba(244,63,94,0.2) !important; }
+.dark-mode .hover\\:bg-rose-50:hover { background-color: rgba(244,63,94,0.2) !important; }
+.dark-mode .bg-emerald-50 { background-color: rgba(16,185,129,0.15) !important; }
+.dark-mode .bg-emerald-100 { background-color: rgba(16,185,129,0.2) !important; }
+.dark-mode .bg-amber-50 { background-color: rgba(245,158,11,0.15) !important; }
+.dark-mode .bg-amber-100 { background-color: rgba(245,158,11,0.2) !important; }
+.dark-mode .hover\\:bg-amber-100:hover { background-color: rgba(245,158,11,0.28) !important; }
+
+/* Tinted borders paired with the soft badges above */
+.dark-mode .border-sky-200, .dark-mode .border-sky-400 { border-color: rgba(56,189,248,0.4) !important; }
+.dark-mode .hover\\:border-sky-300:hover { border-color: rgba(56,189,248,0.5) !important; }
+.dark-mode .focus\\:border-sky-400:focus { border-color: rgba(56,189,248,0.6) !important; }
+.dark-mode .border-rose-200 { border-color: rgba(244,63,94,0.4) !important; }
+.dark-mode .border-blue-100, .dark-mode .border-blue-200 { border-color: rgba(37,99,235,0.4) !important; }
+.dark-mode .hover\\:border-blue-300:hover { border-color: rgba(37,99,235,0.5) !important; }
+
+/* Shadows read as murky on dark surfaces — soften them */
+.dark-mode .shadow, .dark-mode .shadow-sm, .dark-mode .shadow-md,
+.dark-mode .shadow-lg, .dark-mode .shadow-xl, .dark-mode .shadow-2xl {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45) !important;
+}
+`;
+
+function GlobalDarkStyles() {
+  return <style>{DARK_MODE_OVERRIDE_CSS}</style>;
+}
+
 /* ----------------------------- Animated count-up ----------------------------- */
 
 function useCountUp(target, duration = 900) {
@@ -5021,6 +5118,10 @@ function AdminShell({ data, setData, onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [kickedOut, setKickedOut] = useState(false);
   const [htmlViewer, setHtmlViewer] = useState(null); // { url, htmlContent, htmlUrl, title } | null
+  const [adminDark, setAdminDark] = useState(() => memoryStorage.getItem("btr-admin-theme") === "dark");
+  useEffect(() => {
+    memoryStorage.setItem("btr-admin-theme", adminDark ? "dark" : "light");
+  }, [adminDark]);
   const openInApp = (source, title) =>
     setHtmlViewer(
       typeof source === "string" ? { url: source, title } : { htmlContent: source.htmlContent, htmlUrl: source.htmlUrl, title }
@@ -5057,7 +5158,8 @@ function AdminShell({ data, setData, onLogout }) {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className={`min-h-screen bg-slate-50 flex${adminDark ? " dark-mode" : ""}`}>
+      <GlobalDarkStyles />
       {htmlViewer && (
         <HtmlViewerModal
           url={htmlViewer.url}
@@ -5119,6 +5221,12 @@ function AdminShell({ data, setData, onLogout }) {
           </div>
         )}
         <button
+          onClick={() => setAdminDark((v) => !v)}
+          className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+        >
+          {adminDark ? <Sun size={17} /> : <Moon size={17} />} {adminDark ? "Light mode" : "Dark mode"}
+        </button>
+        <button
           onClick={onLogout}
           className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-400 hover:bg-slate-50 hover:text-rose-500"
         >
@@ -5130,9 +5238,14 @@ function AdminShell({ data, setData, onLogout }) {
         {/* Mobile top bar */}
         <div className="lg:hidden sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
           <Brand />
-          <button onClick={onLogout} className="text-slate-400">
-            <LogOut size={18} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setAdminDark((v) => !v)} className="text-slate-400">
+              {adminDark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button onClick={onLogout} className="text-slate-400">
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
 
         <main className="flex-1 p-5 lg:p-8 max-w-5xl">
@@ -7113,7 +7226,8 @@ function LearningAnalysisScreen({ student, data, theme, darkMode, onClose }) {
 function ExpiredGateScreen({ student, theme, darkMode, onLogout, onViewSubscription }) {
   const t = theme;
   return (
-    <div className="min-h-screen w-full" style={{ background: t.pageBg }}>
+    <div className={`min-h-screen w-full${darkMode ? " dark-mode" : ""}`} style={{ background: t.pageBg }}>
+      <GlobalDarkStyles />
       <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: t.cardBorder, background: t.headerBg }}>
         <Brand />
         <button onClick={onLogout} className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: t.textSecondary }}>
@@ -7503,13 +7617,14 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
 
   return (
     <div>
+      <GlobalDarkStyles />
       <style>{`
         @keyframes fadeSlide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes popIn { from { opacity: 0; transform: scale(0.85) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .btr-fade-in { animation: fadeSlide 220ms ease-out; }
       `}</style>
       <div
-        className="min-h-screen w-full max-w-full overflow-x-hidden pb-24 transition-colors duration-300"
+        className={`min-h-screen w-full max-w-full overflow-x-hidden pb-24 transition-colors duration-300${darkMode ? " dark-mode" : ""}`}
         style={{
           background: darkMode
             ? theme.pageBg
