@@ -151,12 +151,23 @@ body,
 body {
   margin: 0;
   background-color: #000;
+  color: var(--color-foreground);
+}
+
+/* Fixed background as its own compositor layer. `background-attachment: fixed`
+   on <body> triggers repaint tearing on Android Chrome once sticky/blurred
+   layers scroll over it — a separate fixed layer paints once and stays put. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: #000;
   background-image: url("/app-background.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
-  color: var(--color-foreground);
+  pointer-events: none;
 }
 
 @layer base {
