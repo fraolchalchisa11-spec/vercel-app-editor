@@ -3,7 +3,7 @@ import {
   GraduationCap, Lock, User, Eye, EyeOff, ArrowRight, LayoutDashboard,
   Users, FileText, StickyNote, Plus, Search, Trash2, Pin, PinOff,
   ExternalLink, X, LogOut, Pencil, Calendar, Clock, CheckCircle2,
-  AlertCircle, BookOpen, Megaphone, Bell, Moon, Sun, ChevronRight,
+  AlertCircle, SearchX, BookOpen, Megaphone, Bell, Moon, Sun, ChevronRight,
   Volume2, Inbox, Grid2x2, Atom, FlaskConical, Leaf, Landmark, TrendingUp,
   Globe2, Home, Layers, Settings as SettingsIcon, Camera, ChevronLeft,
   Languages, BellRing, BellOff, Check, Sparkles, Mail, CreditCard,
@@ -7985,6 +7985,10 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           onOpenAnnouncement={() => {
             setShowSearch(false);
             setTab("home");
+          }}
+          onOpenSubject={() => {
+            setShowSearch(false);
+            setTab("notes");
           }}
         />
       )}
