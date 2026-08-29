@@ -3,7 +3,7 @@ import {
   GraduationCap, Lock, User, Eye, EyeOff, ArrowRight, LayoutDashboard,
   Users, FileText, StickyNote, Plus, Search, Trash2, Pin, PinOff,
   ExternalLink, X, LogOut, Pencil, Calendar, Clock, CheckCircle2,
-  AlertCircle, BookOpen, Megaphone, Bell, Moon, Sun, ChevronRight,
+  AlertCircle, SearchX, BookOpen, Megaphone, Bell, Moon, Sun, ChevronRight,
   Volume2, Inbox, Grid2x2, Atom, FlaskConical, Leaf, Landmark, TrendingUp,
   Globe2, Home, Layers, Settings as SettingsIcon, Camera, ChevronLeft,
   Languages, BellRing, BellOff, Check, Sparkles, Mail, CreditCard,
@@ -6717,36 +6717,106 @@ function FloatingActionButton({ actions, theme }) {
 
 /* ----------------------------- Search overlay ----------------------------- */
 
-function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onOpenAnnouncement }) {
+function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onOpenAnnouncement, onOpenSubject }) {
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all");
   const inputRef = useRef(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
+  const q = query.trim().toLowerCase();
+
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return { exams: [], notes: [], announcements: [] };
+    if (!q) return { subjects: [], notes: [], final: [], mid: [], practice: [], announcements: [] };
 
-    const exams = EXAM_CATEGORIES.flatMap((c) =>
-      (data.examCategories[c] || [])
-        .filter((e) => `${e.title || ""} ${c} ${e.year || ""}`.toLowerCase().includes(q))
-        .map((e) => ({ ...e, category: c }))
-    ).slice(0, 8);
+    const byCat = (cat) =>
+      (data.examCategories?.[cat] || [])
+        .filter((e) => `${e.title || ""} ${cat} ${e.year || ""}`.toLowerCase().includes(q))
+        .map((e) => ({ ...e, category: cat }))
+        .slice(0, 12);
 
-    const notes = notesList(data).filter((n) =>
-      `${n.title} ${n.noteType || ""}`.toLowerCase().includes(q)
-    );
+    const catFor = (needle) =>
+      EXAM_CATEGORIES.find((c) => c.toLowerCase().includes(needle)) || null;
+
+    const finalCat = catFor("final");
+    const midCat = catFor("mid");
+    const practiceCat = catFor("practice");
+
+    const subjects = subjectsList(data)
+      .filter((s) => `${s.name || ""}`.toLowerCase().includes(q))
+      .slice(0, 12);
+
+    const notes = notesList(data)
+      .filter((n) => `${n.title || ""} ${n.noteType || ""} ${n.subjectName || ""}`.toLowerCase().includes(q))
+      .slice(0, 12);
 
     const announcements = (data.announcements || [])
-      .filter((a) => `${a.title} ${a.body}`.toLowerCase().includes(q))
-      .slice(0, 8);
+      .filter((a) => `${a.title || ""} ${a.body || ""}`.toLowerCase().includes(q))
+      .slice(0, 12);
 
-    return { exams, notes: notes.slice(0, 8), announcements };
-  }, [query, data]);
+    return {
+      subjects,
+      notes,
+      final: finalCat ? byCat(finalCat) : [],
+      mid: midCat ? byCat(midCat) : [],
+      practice: practiceCat ? byCat(practiceCat) : [],
+      announcements,
+    };
+  }, [q, data]);
 
-  const hasAny = results.exams.length || results.notes.length || results.announcements.length;
+  const TABS = [
+    { key: "all", label: "All" },
+    { key: "notes", label: "Notes" },
+    { key: "final", label: "Final Exams" },
+    { key: "mid", label: "Mid Exams" },
+    { key: "practice", label: "Practice Exams" },
+  ];
+
+  const show = (key) => filter === "all" || filter === key;
+
+  const visibleCount =
+    (show("notes") ? results.subjects.length + results.notes.length : 0) +
+    (show("final") ? results.final.length : 0) +
+    (show("mid") ? results.mid.length : 0) +
+    (show("practice") ? results.practice.length : 0) +
+    (filter === "all" ? results.announcements.length : 0);
+
+  const Row = ({ icon, title, subtitle, onClick }) => (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99]"
+      style={{ borderColor: theme.cardBorder, background: theme.cardBg }}
+    >
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+        style={{ background: theme.chipBg, color: "#2563EB" }}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold truncate" style={{ color: theme.textPrimary }}>
+          {title}
+        </span>
+        {subtitle ? (
+          <span className="block text-xs truncate" style={{ color: theme.textMuted }}>
+            {subtitle}
+          </span>
+        ) : null}
+      </span>
+      <ChevronRight size={16} style={{ color: theme.textMuted }} className="shrink-0" />
+    </button>
+  );
+
+  const Section = ({ label, children }) => (
+    <div>
+      <div className="mb-2 text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>
+        {label}
+      </div>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
 
   return (
     <div
@@ -6754,104 +6824,134 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
       style={{ background: theme.pageBg }}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="flex items-center gap-2 border-b px-4 py-3.5" style={{ borderColor: theme.cardBorder }}>
-        <Search size={18} style={{ color: theme.textSecondary }} />
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search exams, notes, announcements…"
-          className="flex-1 bg-transparent outline-none text-base"
-          style={{ color: theme.textPrimary }}
-        />
-        <button onClick={onClose} className="rounded-full p-1.5" style={{ color: theme.textSecondary }}>
-          <X size={20} />
-        </button>
+      {/* Search pill */}
+      <div className="px-4 pt-4">
+        <div
+          className="flex items-center gap-3 rounded-full border px-4 py-3 shadow-sm"
+          style={{ borderColor: theme.cardBorder, background: theme.cardBg }}
+        >
+          <Search size={18} style={{ color: theme.textSecondary }} className="shrink-0" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search notes, exams, subjects…"
+            className="flex-1 min-w-0 bg-transparent outline-none text-base"
+            style={{ color: theme.textPrimary }}
+          />
+          <button
+            onClick={() => (query ? setQuery("") : onClose())}
+            className="shrink-0 rounded-full p-1"
+            style={{ color: theme.textSecondary }}
+            aria-label={query ? "Clear search" : "Close search"}
+          >
+            <X size={20} />
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        {!query.trim() ? (
-          <p className="text-sm text-center mt-10" style={{ color: theme.textMuted }}>
-            Start typing to search exams, notes, and announcements.
-          </p>
-        ) : !hasAny ? (
-          <p className="text-sm text-center mt-10" style={{ color: theme.textMuted }}>
-            No results for "{query}".
-          </p>
+      {/* Filter chips */}
+      <div className="mt-3 flex gap-2 overflow-x-auto px-4 pb-3" style={{ scrollbarWidth: "none" }}>
+        {TABS.map((tb) => {
+          const active = filter === tb.key;
+          return (
+            <button
+              key={tb.key}
+              onClick={() => setFilter(tb.key)}
+              className="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition"
+              style={{
+                background: active ? theme.chipBg : "transparent",
+                color: active ? "#2563EB" : theme.textSecondary,
+              }}
+            >
+              {tb.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-10">
+        {!q ? (
+          <div className="mt-24 flex flex-col items-center text-center">
+            <Search size={44} style={{ color: theme.textMuted }} />
+            <p className="mt-4 text-sm" style={{ color: theme.textMuted }}>
+              Start typing to search notes, exams and subjects.
+            </p>
+          </div>
+        ) : visibleCount === 0 ? (
+          <div className="mt-24 flex flex-col items-center text-center">
+            <SearchX size={48} style={{ color: theme.textMuted }} />
+            <p className="mt-4 text-xl font-bold" style={{ color: theme.textPrimary }}>
+              No results
+            </p>
+            <p className="mt-1 text-sm" style={{ color: theme.textMuted }}>
+              Nothing matched “{query}”.
+            </p>
+          </div>
         ) : (
-          <div className="space-y-6">
-            {results.exams.length > 0 && (
-              <div>
-                <div className="mb-2 text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>
-                  Exams
-                </div>
-                <div className="space-y-2">
-                  {results.exams.map((e) => (
-                    <button
-                      key={e.id}
-                      onClick={() => onOpenExam(e)}
-                      className="w-full flex items-center gap-3 rounded-xl border p-3 text-left transition"
-                      style={{ borderColor: theme.cardBorder, background: theme.cardBg }}
-                    >
-                      <FileText size={16} style={{ color: theme.textSecondary }} className="shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold truncate" style={{ color: theme.textPrimary }}>
-                          {e.title || `${e.category} ${e.year}`}
-                        </div>
-                        <div className="text-xs" style={{ color: theme.textMuted }}>{e.category} · {e.year}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <div className="space-y-6 pt-1">
+            {show("notes") && results.subjects.length > 0 && (
+              <Section label="Subjects">
+                {results.subjects.map((s) => (
+                  <Row
+                    key={s.id || s.name}
+                    icon={<BookOpen size={16} />}
+                    title={s.name}
+                    subtitle="Subject"
+                    onClick={() => onOpenSubject?.(s)}
+                  />
+                ))}
+              </Section>
             )}
 
-            {results.notes.length > 0 && (
-              <div>
-                <div className="mb-2 text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>
-                  Notes
-                </div>
-                <div className="space-y-2">
-                  {results.notes.map((n) => (
-                    <button
-                      key={n.id}
-                      onClick={() => onOpenNote(n)}
-                      className="w-full flex items-center gap-3 rounded-xl border p-3 text-left transition"
-                      style={{ borderColor: theme.cardBorder, background: theme.cardBg }}
-                    >
-                      <BookOpen size={16} style={{ color: theme.textSecondary }} className="shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold truncate" style={{ color: theme.textPrimary }}>{n.title}</div>
-                        <div className="text-xs" style={{ color: theme.textMuted }}>{n.noteType || NOTE_TYPES[0]}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {show("notes") && results.notes.length > 0 && (
+              <Section label="Notes">
+                {results.notes.map((n) => (
+                  <Row
+                    key={n.id}
+                    icon={<BookOpen size={16} />}
+                    title={n.title}
+                    subtitle={n.noteType || NOTE_TYPES[0]}
+                    onClick={() => onOpenNote(n)}
+                  />
+                ))}
+              </Section>
             )}
 
-            {results.announcements.length > 0 && (
-              <div>
-                <div className="mb-2 text-xs font-bold uppercase tracking-wide" style={{ color: theme.textMuted }}>
-                  Announcements
-                </div>
-                <div className="space-y-2">
-                  {results.announcements.map((a) => (
-                    <button
-                      key={a.id}
-                      onClick={() => onOpenAnnouncement(a)}
-                      className="w-full flex items-center gap-3 rounded-xl border p-3 text-left transition"
-                      style={{ borderColor: theme.cardBorder, background: theme.cardBg }}
-                    >
-                      <Megaphone size={16} style={{ color: theme.textSecondary }} className="shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold truncate" style={{ color: theme.textPrimary }}>{a.title}</div>
-                        <p className="text-xs truncate" style={{ color: theme.textMuted }}>{a.body}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {[
+              { key: "final", label: "Final Exams", list: results.final },
+              { key: "mid", label: "Mid Exams", list: results.mid },
+              { key: "practice", label: "Practice Exams", list: results.practice },
+            ].map(
+              (grp) =>
+                show(grp.key) &&
+                grp.list.length > 0 && (
+                  <Section key={grp.key} label={grp.label}>
+                    {grp.list.map((e) => (
+                      <Row
+                        key={e.id}
+                        icon={<FileText size={16} />}
+                        title={e.title || `${e.category} ${e.year}`}
+                        subtitle={`${e.category}${e.year ? ` · ${e.year}` : ""}`}
+                        onClick={() => onOpenExam(e)}
+                      />
+                    ))}
+                  </Section>
+                )
+            )}
+
+            {filter === "all" && results.announcements.length > 0 && (
+              <Section label="Announcements">
+                {results.announcements.map((a) => (
+                  <Row
+                    key={a.id}
+                    icon={<Megaphone size={16} />}
+                    title={a.title}
+                    subtitle={a.body}
+                    onClick={() => onOpenAnnouncement(a)}
+                  />
+                ))}
+              </Section>
             )}
           </div>
         )}
@@ -6859,6 +6959,7 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
     </div>
   );
 }
+
 
 function SubscriptionScreen({ student, theme, darkMode, onClose }) {
   const sub = getSubscriptionStatus(student);
@@ -7884,6 +7985,10 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           onOpenAnnouncement={() => {
             setShowSearch(false);
             setTab("home");
+          }}
+          onOpenSubject={() => {
+            setShowSearch(false);
+            setTab("notes");
           }}
         />
       )}
