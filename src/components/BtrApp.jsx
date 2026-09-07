@@ -2078,9 +2078,11 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
       ? "shrink-0 whitespace-nowrap rounded-full border border-sky-200 px-3 py-1 text-xs font-bold text-sky-600 transition hover:bg-sky-50"
       : "shrink-0 whitespace-nowrap rounded-full border border-sky-200 px-4 py-2 text-sm font-bold text-sky-600 transition hover:bg-sky-50";
   const filledClass =
-    size === "sm"
-      ? "shrink-0 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-700"
-      : "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
+    size === "exam"
+      ? "shrink-0 inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full bg-blue-600 px-5 text-[16px] font-extrabold text-white shadow-sm transition hover:bg-blue-700"
+      : size === "sm"
+        ? "shrink-0 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-700"
+        : "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
   const textClass = "inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700 hover:text-sky-800 transition";
   const className = variant === "pill" ? pillClass : variant === "filled" ? filledClass : textClass;
 
@@ -2092,7 +2094,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
         className={className}
       >
         {label}
-        {variant === "filled" && <ArrowRight size={14} />}
+        {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : 14} />}
         {variant !== "pill" && variant !== "filled" && <ExternalLink size={14} />}
       </button>
     );
@@ -2108,7 +2110,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
       className={className}
     >
       {label}
-      {variant === "filled" && <ArrowRight size={14} />}
+      {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : 14} />}
       {variant !== "pill" && variant !== "filled" && <ExternalLink size={14} />}
     </button>
   );
@@ -7939,8 +7941,8 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
             <section className="btr-fade-in">
               <PageHeader
                 logoUrl={homeLogoUrl}
-                title={t(lang, "exams")}
-                subtitle="Browse final, mid and practice exams"
+                title="BTR Exam"
+                subtitle="Your practice. Our priority."
                 placeholder="Search exams, years, subjects..."
                 theme={theme}
                 darkMode={darkMode}
@@ -7949,6 +7951,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                 onSearch={() => setShowSearch(true)}
                 onNotifications={() => setShowNotifications(true)}
                 onProfile={() => setShowProfile(true)}
+                variant="exam"
               />
               <StudentExamBrowser data={data} onOpenInApp={trackAndOpen} isSubscribed={subscription.hasPlan && !subscription.isExpired} onUnlock={openSubscribeFlow} />
             </section>
