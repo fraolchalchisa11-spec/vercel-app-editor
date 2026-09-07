@@ -5992,8 +5992,11 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      <div className="mb-5 grid grid-cols-3 overflow-hidden rounded-[24px] border border-blue-100 bg-white shadow-sm">
-        {EXAM_CATEGORIES.map((c, i) => {
+      <div
+        className="mb-5 flex items-center gap-1.5 rounded-full border p-1.5 shadow-sm"
+        style={{ borderColor: "#DDE7F6", background: "rgba(255,255,255,0.92)" }}
+      >
+        {EXAM_CATEGORIES.map((c) => {
           const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
           const Icon = meta.icon;
           const active = activeCategory === c;
@@ -6001,12 +6004,16 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             <button
               key={c}
               onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex min-h-[62px] items-center justify-center gap-2.5 px-2 text-[15px] font-extrabold transition ${
-                active ? "text-white" : "bg-white text-slate-700"
-              } ${i !== 0 ? "border-l border-blue-100" : ""}`}
-              style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
+              className={`flex h-[54px] flex-1 items-center justify-center gap-2 rounded-full px-2 text-[15px] font-extrabold transition ${
+                active ? "text-white" : "text-slate-600"
+              }`}
+              style={
+                active
+                  ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", boxShadow: "0 8px 20px rgba(37, 99, 235, 0.28)" }
+                  : undefined
+              }
             >
-              <Icon size={25} strokeWidth={2.1} />
+              <Icon size={22} strokeWidth={2.1} />
               {meta.label}
             </button>
           );
