@@ -5993,7 +5993,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
   return (
     <div>
       <div
-        className="mb-5 flex items-center gap-1.5 rounded-full border p-1.5 shadow-sm"
+        className="mb-5 flex items-center gap-1 overflow-hidden rounded-full border p-1 shadow-sm"
         style={{ borderColor: "#DDE7F6", background: "rgba(255,255,255,0.92)" }}
       >
         {EXAM_CATEGORIES.map((c) => {
@@ -6004,17 +6004,17 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             <button
               key={c}
               onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex h-[54px] flex-1 items-center justify-center gap-2 rounded-full px-2 text-[15px] font-extrabold transition ${
+              className={`flex h-[46px] flex-1 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full px-1 text-[12px] font-extrabold leading-none transition ${
                 active ? "text-white" : "text-slate-600"
               }`}
               style={
                 active
-                  ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", boxShadow: "0 8px 20px rgba(37, 99, 235, 0.28)" }
+                  ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", boxShadow: "0 6px 14px rgba(37, 99, 235, 0.28)" }
                   : undefined
               }
             >
-              <Icon size={22} strokeWidth={2.1} />
-              {meta.label}
+              <Icon size={16} strokeWidth={2.2} className="shrink-0" />
+              <span className="truncate">{meta.label}</span>
             </button>
           );
         })}
