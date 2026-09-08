@@ -5854,15 +5854,15 @@ function PageHeader({
 function FilterSelect({ icon: Icon, value, onChange, children }) {
   return (
     <div className="relative min-w-[0] shrink-0">
-      <Icon size={21} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 sm:left-5" strokeWidth={2.1} />
+      <Icon size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
       <select
         value={value}
         onChange={onChange}
-        className="h-[50px] max-w-[195px] appearance-none rounded-full border border-blue-100 bg-white py-2 pl-11 pr-9 text-[13px] font-extrabold text-slate-700 shadow-sm outline-none sm:h-[54px] sm:max-w-[220px] sm:pl-[54px] sm:pr-10 sm:text-[15px]"
+        className="h-9 max-w-[150px] appearance-none rounded-full border border-blue-100 bg-white py-1 pl-8 pr-7 text-[12px] font-bold text-slate-700 shadow-sm outline-none"
       >
         {children}
       </select>
-      <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" />
+      <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
     </div>
   );
 }
@@ -5992,7 +5992,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      <div className="mb-5 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm sm:p-1.5">
+      <div className="mb-4 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm">
         {EXAM_CATEGORIES.map((c) => {
           const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
           const Icon = meta.icon;
@@ -6001,19 +6001,19 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             <button
               key={c}
               onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex min-h-[50px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[11px] font-extrabold transition sm:min-h-[54px] sm:gap-2 sm:px-2 sm:text-[15px] ${
+              className={`flex min-h-[38px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[11px] font-bold transition ${
                 active ? "text-white shadow-md" : "bg-transparent text-slate-700"
               }`}
               style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
             >
-              <Icon size={18} className="shrink-0 sm:h-[22px] sm:w-[22px]" strokeWidth={2.1} />
+              <Icon size={14} className="shrink-0" strokeWidth={2.1} />
               <span className="truncate">{meta.label}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="mb-7 flex flex-nowrap items-center gap-2 overflow-x-auto pb-2 sm:gap-3">
+      <div className="mb-5 flex flex-nowrap items-center gap-2 overflow-x-auto pb-2">
         <FilterSelect icon={Calendar} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
           <option value="all">All Years</option>
           {availableYears.map((y) => (
@@ -6038,7 +6038,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
         {anyFilterActive && (
           <button
             onClick={clearAll}
-            className="shrink-0 rounded-full bg-blue-50 px-4 py-3 text-sm font-extrabold text-blue-600"
+            className="shrink-0 rounded-full bg-blue-50 px-3 py-2 text-xs font-bold text-blue-600"
           >
             Clear all
           </button>
@@ -7951,7 +7951,6 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                 onSearch={() => setShowSearch(true)}
                 onNotifications={() => setShowNotifications(true)}
                 onProfile={() => setShowProfile(true)}
-                variant="exam"
               />
               <StudentExamBrowser data={data} onOpenInApp={trackAndOpen} isSubscribed={subscription.hasPlan && !subscription.isExpired} onUnlock={openSubscribeFlow} />
             </section>
