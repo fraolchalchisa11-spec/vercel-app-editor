@@ -5747,21 +5747,21 @@ function PageHeader({
     return (
       <div className="mb-5">
         <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="BTR" className="h-[58px] w-[58px] shrink-0 object-contain" />
-          <span className="h-9 w-px shrink-0" style={{ background: darkMode ? "rgba(148,163,184,0.35)" : "#CBD5E1" }} />
+          <img src={logoUrl} alt="BTR" className="h-[50px] w-[50px] shrink-0 object-contain sm:h-[58px] sm:w-[58px]" />
+          <span className="h-8 w-px shrink-0 sm:h-9" style={{ background: darkMode ? "rgba(148,163,184,0.35)" : "#CBD5E1" }} />
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[26px] font-extrabold leading-tight" style={{ color: theme.textPrimary }}>
+            <h2 className="truncate text-[22px] font-extrabold leading-tight sm:text-[26px]" style={{ color: theme.textPrimary }}>
               {title}
             </h2>
-            <p className="truncate text-[15px] font-medium" style={{ color: theme.textSecondary }}>{subtitle}</p>
+            <p className="truncate text-[12px] font-medium sm:text-[15px]" style={{ color: theme.textSecondary }}>{subtitle}</p>
           </div>
           <button
             onClick={onNotifications}
             aria-label="Notifications"
-            className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+            className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11"
             style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
           >
-            <Bell size={26} strokeWidth={2.2} />
+            <Bell size={24} strokeWidth={2.2} />
             {notifications.length > 0 && (
               <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
             )}
@@ -5769,28 +5769,28 @@ function PageHeader({
           <button
             onClick={onProfile}
             aria-label="Profile"
-            className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full"
+            className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-11 sm:w-11"
             style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
           >
             {student?.photo ? (
               <img src={student.photo} alt={student.name} className="h-full w-full rounded-full object-cover" />
             ) : (
-              <User size={30} strokeWidth={2.1} />
+              <User size={28} strokeWidth={2.1} />
             )}
           </button>
         </div>
 
         <button
           onClick={onSearch}
-          className="mt-5 flex h-[62px] w-full items-center gap-4 rounded-full border px-5 text-left shadow-sm"
+          className="mt-5 flex h-14 w-full items-center gap-3 rounded-full border px-5 text-left shadow-sm sm:h-[62px] sm:gap-4"
           style={{
             background: darkMode ? theme.cardBg : "rgba(255,255,255,0.92)",
             borderColor: darkMode ? theme.cardBorder : "#DDE7F6",
             boxShadow: darkMode ? "none" : "0 12px 32px rgba(31, 82, 160, 0.10)",
           }}
         >
-          <Search size={31} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
-          <span className="min-w-0 flex-1 truncate text-[17px] font-medium" style={{ color: theme.textMuted }}>
+          <Search size={27} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
+          <span className="min-w-0 flex-1 truncate text-[15px] font-medium sm:text-[17px]" style={{ color: theme.textMuted }}>
             {placeholder}
           </span>
           <SlidersHorizontal size={24} strokeWidth={2.2} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
@@ -5854,11 +5854,11 @@ function PageHeader({
 function FilterSelect({ icon: Icon, value, onChange, children }) {
   return (
     <div className="relative min-w-[0] shrink-0">
-      <Icon size={24} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
+      <Icon size={21} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 sm:left-5" strokeWidth={2.1} />
       <select
         value={value}
         onChange={onChange}
-        className="h-[54px] max-w-[220px] appearance-none rounded-full border border-blue-100 bg-white py-2 pl-[54px] pr-10 text-[15px] font-extrabold text-slate-700 shadow-sm outline-none"
+        className="h-[50px] max-w-[195px] appearance-none rounded-full border border-blue-100 bg-white py-2 pl-11 pr-9 text-[13px] font-extrabold text-slate-700 shadow-sm outline-none sm:h-[54px] sm:max-w-[220px] sm:pl-[54px] sm:pr-10 sm:text-[15px]"
       >
         {children}
       </select>
@@ -5874,31 +5874,31 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
   const canExpand = !!(university || time || questions);
 
   return (
-    <div className="rounded-[22px] border border-blue-50 bg-white p-3 shadow-sm" style={{ boxShadow: "0 14px 34px rgba(31, 82, 160, 0.09)" }}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+    <div className="rounded-[22px] border border-blue-50 bg-white p-3 shadow-sm sm:p-4" style={{ boxShadow: "0 14px 34px rgba(31, 82, 160, 0.09)" }}>
+      <div className="flex items-center justify-between gap-2 sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
           <span
-            className="flex h-[66px] w-[66px] shrink-0 items-center justify-center rounded-2xl"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl sm:h-[66px] sm:w-[66px]"
             style={{ background: `${color}1A` }}
           >
-            {locked ? <Lock size={25} className="text-blue-500" /> : <SubjectIcon size={31} strokeWidth={2.1} style={{ color }} />}
+            {locked ? <Lock size={23} className="text-blue-500" /> : <SubjectIcon size={28} strokeWidth={2.1} style={{ color }} />}
           </span>
           <div className="min-w-0">
             {categoryLabel && (
-              <span className="mb-1 inline-block rounded-full bg-blue-50 px-3 py-1 text-[12px] font-extrabold text-blue-600">
+              <span className="mb-0.5 inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-extrabold text-blue-600 sm:mb-1 sm:px-3 sm:py-1 sm:text-[12px]">
                 {categoryLabel}
               </span>
             )}
-            <span className="block truncate text-[21px] font-extrabold leading-tight text-slate-950">{title}</span>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-slate-100 px-4 py-1 text-[13px] font-extrabold text-slate-500">
+            <span className="block truncate text-[16px] font-extrabold leading-tight text-slate-950 sm:text-[21px]">{title}</span>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 sm:mt-2 sm:gap-2">
+              <span className="rounded-full bg-slate-100 px-3 py-0.5 text-[11px] font-extrabold text-slate-500 sm:px-4 sm:py-1 sm:text-[13px]">
                 {year}
               </span>
               {isPro && <ProBadge />}
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           {locked ? (
             <button
               type="button"
@@ -5915,7 +5915,7 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 sm:h-10 sm:w-10"
             >
               {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </button>
@@ -5992,7 +5992,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      <div className="mb-5 flex items-stretch gap-1 rounded-full border border-blue-100 bg-white p-1.5 shadow-sm">
+      <div className="mb-5 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm sm:p-1.5">
         {EXAM_CATEGORIES.map((c) => {
           const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
           const Icon = meta.icon;
@@ -6001,19 +6001,19 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             <button
               key={c}
               onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex min-h-[54px] flex-1 items-center justify-center gap-2 rounded-full px-2 text-[15px] font-extrabold transition ${
+              className={`flex min-h-[50px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[11px] font-extrabold transition sm:min-h-[54px] sm:gap-2 sm:px-2 sm:text-[15px] ${
                 active ? "text-white shadow-md" : "bg-transparent text-slate-700"
               }`}
               style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
             >
-              <Icon size={22} strokeWidth={2.1} />
-              {meta.label}
+              <Icon size={18} className="shrink-0 sm:h-[22px] sm:w-[22px]" strokeWidth={2.1} />
+              <span className="truncate">{meta.label}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="mb-7 flex flex-nowrap items-center gap-3 overflow-x-auto pb-1">
+      <div className="mb-7 flex flex-nowrap items-center gap-2 overflow-x-auto pb-2 sm:gap-3">
         <FilterSelect icon={Calendar} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
           <option value="all">All Years</option>
           {availableYears.map((y) => (
@@ -6047,12 +6047,12 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
       <div className="mb-5 flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="truncate text-[26px] font-extrabold leading-tight text-slate-950">
+          <h1 className="truncate text-[23px] font-extrabold leading-tight text-slate-950 sm:text-[26px]">
             {((EXAM_CATEGORY_META[activeCategory] || {}).label || activeCategory).replace("Exam", "Exams")}
           </h1>
-          <p className="mt-0.5 text-[15px] font-medium text-slate-500">Past papers. Real exam experience.</p>
+          <p className="mt-0.5 text-[13px] font-medium text-slate-500 sm:text-[15px]">Past papers. Real exam experience.</p>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-blue-50 px-4 py-2 text-sm font-extrabold text-slate-500">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 px-3 py-2 text-xs font-extrabold text-slate-500 sm:gap-1.5 sm:px-4 sm:text-sm">
           {entries.length} Exam{entries.length === 1 ? "" : "s"}
           <ChevronRight size={17} />
         </span>
