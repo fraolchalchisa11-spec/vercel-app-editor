@@ -5747,56 +5747,46 @@ function PageHeader({
   onSearch, onNotifications, onProfile, variant = "default",
 }) {
   if (variant === "exam") {
+    // Compact single-row header: round logo, inline search field, bell, profile —
+    // no separate title/subtitle line and no second row for the search bar.
     return (
-      <div className="mb-3">
-        <div className="flex items-center gap-2.5">
-          <img src={logoUrl} alt="BTR" className="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10" />
-          <span className="h-6 w-px shrink-0 sm:h-7" style={{ background: darkMode ? "rgba(148,163,184,0.35)" : "#CBD5E1" }} />
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-lg font-extrabold leading-tight sm:text-xl" style={{ color: theme.textPrimary }}>
-              {title}
-            </h2>
-            <p className="truncate text-[11px] font-medium sm:text-xs" style={{ color: theme.textSecondary }}>{subtitle}</p>
-          </div>
-          <button
-            onClick={onNotifications}
-            aria-label="Notifications"
-            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:h-9 sm:w-9"
-            style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
-          >
-            <Bell size={20} strokeWidth={2.2} />
-            {notifications.length > 0 && (
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
-            )}
-          </button>
-          <button
-            onClick={onProfile}
-            aria-label="Profile"
-            className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-9 sm:w-9"
-            style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
-          >
-            {student?.photo ? (
-              <img src={student.photo} alt={student.name} className="h-full w-full rounded-full object-cover" />
-            ) : (
-              <User size={22} strokeWidth={2.1} />
-            )}
-          </button>
-        </div>
-
+      <div className="mb-3 flex items-center gap-2.5">
+        <img src={logoUrl} alt="BTR" className="h-11 w-11 shrink-0 rounded-full object-cover sm:h-12 sm:w-12" />
         <button
           onClick={onSearch}
-          className="mt-3 flex h-11 w-full items-center gap-2.5 rounded-full border px-4 text-left shadow-sm sm:h-12 sm:gap-3"
+          className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full border px-4 text-left shadow-sm sm:h-12"
           style={{
-            background: darkMode ? theme.cardBg : "rgba(255,255,255,0.92)",
-            borderColor: darkMode ? theme.cardBorder : "#DDE7F6",
-            boxShadow: darkMode ? "none" : "0 8px 24px rgba(31, 82, 160, 0.08)",
+            background: darkMode ? theme.cardBg : "#FFFFFF",
+            borderColor: darkMode ? theme.cardBorder : "#E7ECF6",
           }}
         >
-          <Search size={20} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
+          <Search size={18} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#94A3B8" }} />
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium sm:text-sm" style={{ color: theme.textMuted }}>
             {placeholder}
           </span>
-          <SlidersHorizontal size={18} strokeWidth={2.2} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
+        </button>
+        <button
+          onClick={onNotifications}
+          aria-label="Notifications"
+          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+          style={{ color: darkMode ? "#93C5FD" : AUTH_BLUE }}
+        >
+          <Bell size={22} strokeWidth={2.1} />
+          {notifications.length > 0 && (
+            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
+          )}
+        </button>
+        <button
+          onClick={onProfile}
+          aria-label="Profile"
+          className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
+          style={{ color: darkMode ? "#93C5FD" : AUTH_BLUE }}
+        >
+          {student?.photo ? (
+            <img src={student.photo} alt={student.name} className="h-full w-full rounded-full object-cover" />
+          ) : (
+            <User size={24} strokeWidth={2} />
+          )}
         </button>
       </div>
     );
@@ -5890,11 +5880,11 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
   const canExpand = !!(university || time || questions);
 
   return (
-    <div className="rounded-xl border border-slate-100 bg-white p-2 shadow-sm">
+    <div className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-slate-100">
-            {locked ? <Lock size={14} className="text-blue-500" /> : <ExamFileIcon size={18} />}
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-slate-100">
+            {locked ? <Lock size={15} className="text-blue-500" /> : <ExamFileIcon size={19} />}
           </span>
           <div className="min-w-0">
             <span className="block truncate text-[13px] font-bold leading-tight text-slate-900">{title}</span>
@@ -7952,9 +7942,8 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           {tab === "exams" && (
             <section className="btr-fade-in">
               <PageHeader
+                variant="exam"
                 logoUrl={homeLogoUrl}
-                title="BTR Exam"
-                subtitle="Your practice. Our priority."
                 placeholder="Search exams, years, subjects..."
                 theme={theme}
                 darkMode={darkMode}
