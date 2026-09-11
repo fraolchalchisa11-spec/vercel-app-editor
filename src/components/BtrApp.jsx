@@ -2079,7 +2079,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
       : "shrink-0 whitespace-nowrap rounded-full border border-sky-200 px-4 py-2 text-sm font-bold text-sky-600 transition hover:bg-sky-50";
   const filledClass =
     size === "exam"
-      ? "shrink-0 inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-5 text-[16px] font-extrabold text-blue-600 shadow-sm ring-1 ring-inset ring-blue-100 transition hover:bg-blue-50"
+      ? "shrink-0 inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-100 bg-white px-4 text-[14px] font-extrabold text-blue-600 shadow-sm transition hover:bg-blue-50"
       : size === "sm"
         ? "shrink-0 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-700"
         : "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
@@ -5745,47 +5745,47 @@ function PageHeader({
 }) {
   if (variant === "exam") {
     return (
-      <div className="mb-5 flex items-center gap-2.5 sm:gap-3">
+      <div className="mb-4 flex items-center gap-2">
         <img
           src={logoUrl}
           alt="BTR"
-          className="h-11 w-11 shrink-0 overflow-hidden rounded-full object-cover shadow-sm sm:h-[52px] sm:w-[52px]"
+          className="h-12 w-12 shrink-0 overflow-hidden rounded-full object-cover"
         />
         <button
           onClick={onSearch}
-          className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full border px-4 text-left shadow-sm sm:h-[54px] sm:gap-3 sm:px-5"
+          className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full border px-4 text-left shadow-sm"
           style={{
             background: darkMode ? theme.cardBg : "#FFFFFF",
             borderColor: darkMode ? theme.cardBorder : "#E6ECF6",
-            boxShadow: darkMode ? "none" : "0 8px 22px rgba(31, 82, 160, 0.08)",
+            boxShadow: darkMode ? "none" : "0 5px 16px rgba(31, 82, 160, 0.07)",
           }}
         >
-          <Search size={21} strokeWidth={2.2} style={{ color: darkMode ? "#93C5FD" : "#1D4ED8" }} />
-          <span className="min-w-0 flex-1 truncate text-[14px] font-medium sm:text-[16px]" style={{ color: theme.textMuted }}>
+          <Search size={20} strokeWidth={2.2} style={{ color: darkMode ? "#93C5FD" : "#1D4ED8" }} />
+          <span className="min-w-0 flex-1 truncate text-[14px] font-medium" style={{ color: theme.textMuted }}>
             {placeholder}
           </span>
         </button>
         <button
           onClick={onNotifications}
           aria-label="Notifications"
-          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12"
+          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
           style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
         >
-          <Bell size={24} strokeWidth={2.1} />
+          <Bell size={23} strokeWidth={2.1} />
           {notifications.length > 0 && (
-            <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
+            <span className="absolute right-1.5 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
           )}
         </button>
         <button
           onClick={onProfile}
           aria-label="Profile"
-          className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-12 sm:w-12"
+          className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full"
           style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
         >
           {student?.photo ? (
             <img src={student.photo} alt={student.name} className="h-full w-full rounded-full object-cover" />
           ) : (
-            <User size={26} strokeWidth={2.1} />
+            <User size={25} strokeWidth={2.1} />
           )}
         </button>
       </div>
@@ -5846,16 +5846,16 @@ function PageHeader({
 
 function FilterSelect({ icon: Icon, value, onChange, children }) {
   return (
-    <div className="relative min-w-[0] shrink-0">
-      <Icon size={21} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 sm:left-5" strokeWidth={2.1} />
+    <div className="relative min-w-0 shrink-0">
+      <Icon size={19} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
       <select
         value={value}
         onChange={onChange}
-        className="h-[50px] max-w-[195px] appearance-none rounded-full border border-blue-100 bg-white py-2 pl-11 pr-9 text-[13px] font-extrabold text-slate-700 shadow-sm outline-none sm:h-[54px] sm:max-w-[220px] sm:pl-[54px] sm:pr-10 sm:text-[15px]"
+        className="h-11 max-w-[180px] appearance-none rounded-full border border-blue-100 bg-white py-2 pl-10 pr-8 text-[12px] font-extrabold text-slate-700 shadow-sm outline-none"
       >
         {children}
       </select>
-      <ChevronDown size={18} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" />
+      <ChevronDown size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
     </div>
   );
 }
@@ -5865,37 +5865,40 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
   const canExpand = !!(university || time || questions);
 
   return (
-    <div className="rounded-[22px] border border-blue-50 bg-white p-3 shadow-sm sm:p-4" style={{ boxShadow: "0 14px 34px rgba(31, 82, 160, 0.09)" }}>
-      <div className="flex items-center justify-between gap-2 sm:gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+    <div
+      className="rounded-[18px] border border-blue-100 bg-white p-2.5 shadow-sm"
+      style={{ boxShadow: "0 5px 16px rgba(37, 99, 235, 0.08)" }}
+    >
+      <div className="flex min-h-[76px] items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <span
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl sm:h-[62px] sm:w-[62px]"
-            style={{ background: "#E4ECFD" }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white"
+            style={{ boxShadow: "0 2px 7px rgba(37, 99, 235, 0.08)" }}
           >
             {locked ? (
-              <Lock size={22} className="text-blue-500" />
+              <Lock size={20} className="text-blue-500" />
             ) : (
-              <FileText size={26} strokeWidth={2.1} className="text-blue-600" />
+              <FileText size={24} strokeWidth={2.1} className="text-blue-600" />
             )}
           </span>
-          <div className="min-w-0">
-            <span className="block truncate text-[16px] font-extrabold leading-tight text-slate-950 sm:text-[21px]">{title}</span>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 sm:mt-2 sm:gap-2">
-              <span className="rounded-full bg-slate-100 px-3 py-0.5 text-[11px] font-extrabold text-slate-500 sm:px-4 sm:py-1 sm:text-[13px]">
+          <div className="min-w-0 flex-1">
+            <span className="block truncate text-[17px] font-extrabold leading-tight text-slate-950">{title}</span>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-extrabold leading-none text-slate-500">
                 {year}
               </span>
               {isPro && <ProBadge />}
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+        <div className="flex shrink-0 items-center gap-1">
           {locked ? (
             <button
               type="button"
               onClick={onUnlock}
-              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-4 py-2 text-[13px] font-extrabold text-amber-600"
+              className="inline-flex h-10 items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-3 text-[12px] font-extrabold text-amber-600"
             >
-              <Lock size={13} /> Unlock
+              <Lock size={12} /> Unlock
             </button>
           ) : (
             openSlot
@@ -5905,40 +5908,40 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 sm:h-10 sm:w-10"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
-              {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
           )}
         </div>
       </div>
 
       {expanded && canExpand && (
-        <div className="mt-3 flex items-stretch justify-between gap-1 rounded-2xl bg-slate-50 px-2 py-3.5">
+        <div className="mt-2.5 flex items-stretch justify-between gap-1 rounded-xl bg-slate-50 px-2 py-3">
           {university && (
-            <div className="flex flex-1 items-center justify-center gap-2 px-1">
-              <Landmark size={18} className="shrink-0 text-blue-600" />
+            <div className="flex flex-1 items-center justify-center gap-1.5 px-1">
+              <Landmark size={16} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
-                <div className="text-[11px] leading-tight text-slate-400">University</div>
-                <div className="truncate text-sm font-bold leading-tight text-slate-900">{university}</div>
+                <div className="text-[10px] leading-tight text-slate-400">University</div>
+                <div className="truncate text-xs font-bold leading-tight text-slate-900">{university}</div>
               </div>
             </div>
           )}
           {time && (
-            <div className="flex flex-1 items-center justify-center gap-2 border-l border-slate-200 px-1">
-              <Clock size={18} className="shrink-0 text-blue-600" />
+            <div className="flex flex-1 items-center justify-center gap-1.5 border-l border-slate-200 px-1">
+              <Clock size={16} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
-                <div className="text-[11px] leading-tight text-slate-400">Time</div>
-                <div className="truncate text-sm font-bold leading-tight text-slate-900">{time}</div>
+                <div className="text-[10px] leading-tight text-slate-400">Time</div>
+                <div className="truncate text-xs font-bold leading-tight text-slate-900">{time}</div>
               </div>
             </div>
           )}
           {questions && (
-            <div className="flex flex-1 items-center justify-center gap-2 border-l border-slate-200 px-1">
-              <HelpCircle size={18} className="shrink-0 text-blue-600" />
+            <div className="flex flex-1 items-center justify-center gap-1.5 border-l border-slate-200 px-1">
+              <HelpCircle size={16} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
-                <div className="text-[11px] leading-tight text-slate-400">Questions</div>
-                <div className="truncate text-sm font-bold leading-tight text-slate-900">{questions}</div>
+                <div className="text-[10px] leading-tight text-slate-400">Questions</div>
+                <div className="truncate text-xs font-bold leading-tight text-slate-900">{questions}</div>
               </div>
             </div>
           )}
@@ -5982,7 +5985,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      <div className="mb-5 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm sm:p-1.5">
+      <div className="mb-4 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm">
         {EXAM_CATEGORIES.map((c) => {
           const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
           const Icon = meta.icon;
@@ -5991,19 +5994,19 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             <button
               key={c}
               onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex min-h-[50px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[11px] font-extrabold transition sm:min-h-[54px] sm:gap-2 sm:px-2 sm:text-[15px] ${
+              className={`flex min-h-[48px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[11px] font-extrabold transition ${
                 active ? "text-white shadow-md" : "bg-transparent text-slate-700"
               }`}
               style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
             >
-              <Icon size={18} className="shrink-0 sm:h-[22px] sm:w-[22px]" strokeWidth={2.1} />
+              <Icon size={19} className="shrink-0" strokeWidth={2.1} />
               <span className="truncate">{meta.label}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="mb-7 flex flex-nowrap items-center gap-2 overflow-x-auto pb-2 sm:gap-3">
+      <div className="mb-5 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
         <FilterSelect icon={Calendar} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
           <option value="all">All Years</option>
           {availableYears.map((y) => (
@@ -6040,7 +6043,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
           No {activeCategory.toLowerCase()} materials posted yet.
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2.5">
           {entries.map((e) => {
             const locked = e.isPro && !isSubscribed;
             return (
