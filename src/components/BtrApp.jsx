@@ -5855,15 +5855,15 @@ function PageHeader({
 function FilterSelect({ icon: Icon, value, onChange, children }) {
   return (
     <div className="relative min-w-[0] shrink-0">
-      <Icon size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
+      <Icon size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
       <select
         value={value}
         onChange={onChange}
-        className="h-9 max-w-[150px] appearance-none rounded-full border border-blue-100 bg-white py-1 pl-8 pr-7 text-[12px] font-bold text-slate-700 shadow-sm outline-none"
+        className="h-8 max-w-[130px] appearance-none rounded-full border border-blue-100 bg-white py-1 pl-7 pr-6 text-[11px] font-bold text-slate-700 shadow-sm outline-none"
       >
         {children}
       </select>
-      <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+      <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-500" />
     </div>
   );
 }
