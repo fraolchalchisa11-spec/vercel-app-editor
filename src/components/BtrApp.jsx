@@ -2082,7 +2082,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
     size === "exam"
       ? "shrink-0 inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full bg-blue-600 px-5 text-[16px] font-extrabold text-white shadow-sm transition hover:bg-blue-700"
       : size === "examOpen"
-        ? "shrink-0 inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full bg-white px-3 text-[11px] font-extrabold text-blue-600 shadow-sm ring-1 ring-slate-100 transition hover:bg-blue-50"
+        ? "shrink-0 inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-full bg-white px-3.5 text-[12px] font-extrabold text-blue-600 shadow-sm ring-1 ring-slate-100 transition hover:bg-blue-50"
         : size === "sm"
           ? "shrink-0 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-700"
           : "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
@@ -2097,7 +2097,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
         className={className}
       >
         {label}
-        {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : size === "examOpen" ? 12 : 14} />}
+        {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : size === "examOpen" ? 13 : 14} />}
         {variant !== "pill" && variant !== "filled" && <ExternalLink size={14} />}
       </button>
     );
@@ -2113,7 +2113,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
       className={className}
     >
       {label}
-      {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : size === "examOpen" ? 12 : 14} />}
+      {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : size === "examOpen" ? 13 : 14} />}
       {variant !== "pill" && variant !== "filled" && <ExternalLink size={14} />}
     </button>
   );
@@ -5747,46 +5747,23 @@ function PageHeader({
   onSearch, onNotifications, onProfile, variant = "default",
 }) {
   if (variant === "exam") {
-    // Compact single-row header: round logo, inline search field, bell, profile —
-    // no separate title/subtitle line and no second row for the search bar.
+    // Compact single-row header: round logo + a long, slim inline search field.
+    // Notifications and profile are intentionally omitted from this variant.
     return (
       <div className="mb-3 flex items-center gap-2.5">
-        <img src={logoUrl} alt="BTR" className="h-11 w-11 shrink-0 rounded-full object-cover sm:h-12 sm:w-12" />
+        <img src={logoUrl} alt="BTR" className="h-10 w-10 shrink-0 rounded-full object-cover sm:h-11 sm:w-11" />
         <button
           onClick={onSearch}
-          className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full border px-4 text-left shadow-sm sm:h-12"
+          className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-full border px-4 text-left shadow-sm sm:h-10"
           style={{
             background: darkMode ? theme.cardBg : "#FFFFFF",
             borderColor: darkMode ? theme.cardBorder : "#E7ECF6",
           }}
         >
-          <Search size={18} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#94A3B8" }} />
+          <Search size={17} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#94A3B8" }} />
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium sm:text-sm" style={{ color: theme.textMuted }}>
             {placeholder}
           </span>
-        </button>
-        <button
-          onClick={onNotifications}
-          aria-label="Notifications"
-          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-          style={{ color: darkMode ? "#93C5FD" : AUTH_BLUE }}
-        >
-          <Bell size={22} strokeWidth={2.1} />
-          {notifications.length > 0 && (
-            <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
-          )}
-        </button>
-        <button
-          onClick={onProfile}
-          aria-label="Profile"
-          className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full"
-          style={{ color: darkMode ? "#93C5FD" : AUTH_BLUE }}
-        >
-          {student?.photo ? (
-            <img src={student.photo} alt={student.name} className="h-full w-full rounded-full object-cover" />
-          ) : (
-            <User size={24} strokeWidth={2} />
-          )}
         </button>
       </div>
     );
@@ -5847,15 +5824,15 @@ function PageHeader({
 function FilterSelect({ icon: Icon, value, onChange, children }) {
   return (
     <div className="relative min-w-[0] shrink-0">
-      <Icon size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
+      <Icon size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
       <select
         value={value}
         onChange={onChange}
-        className="h-8 max-w-[130px] appearance-none rounded-full border border-blue-100 bg-white py-1 pl-7 pr-6 text-[11px] font-bold text-slate-700 shadow-sm outline-none"
+        className="h-10 max-w-[150px] appearance-none rounded-full border border-blue-100 bg-white py-1 pl-8 pr-7 text-[12px] font-bold text-slate-700 shadow-sm outline-none"
       >
         {children}
       </select>
-      <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-500" />
+      <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
     </div>
   );
 }
@@ -5880,30 +5857,30 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
   const canExpand = !!(university || time || questions);
 
   return (
-    <div className="rounded-xl border border-slate-100 bg-white p-2.5 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-slate-100">
-            {locked ? <Lock size={15} className="text-blue-500" /> : <ExamFileIcon size={19} />}
+    <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+      <div className="flex items-center justify-between gap-2.5">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-slate-100">
+            {locked ? <Lock size={16} className="text-blue-500" /> : <ExamFileIcon size={21} />}
           </span>
           <div className="min-w-0">
-            <span className="block truncate text-[13px] font-bold leading-tight text-slate-900">{title}</span>
-            <div className="mt-0.5 flex flex-wrap items-center gap-1">
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+            <span className="block truncate text-[14px] font-bold leading-tight text-slate-900">{title}</span>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">
                 {year}
               </span>
               {isPro && <ProBadge />}
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1.5">
           {locked ? (
             <button
               type="button"
               onClick={onUnlock}
-              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600"
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
             >
-              <Lock size={9} /> Unlock
+              <Lock size={10} /> Unlock
             </button>
           ) : (
             openSlot
@@ -5913,9 +5890,9 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
-              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
             </button>
           )}
         </div>
@@ -5990,7 +5967,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      <div className="mb-3 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-0.5 shadow-sm">
+      <div className="mb-3 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm">
         {EXAM_CATEGORIES.map((c) => {
           const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
           const Icon = meta.icon;
@@ -5999,12 +5976,12 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             <button
               key={c}
               onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex min-h-[32px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[10px] font-bold transition ${
+              className={`flex min-h-[40px] min-w-0 items-center justify-center gap-1.5 rounded-full px-1.5 text-[12px] font-bold transition ${
                 active ? "text-white shadow-sm" : "bg-transparent text-slate-700"
               }`}
               style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
             >
-              <Icon size={12} className="shrink-0" strokeWidth={2.1} />
+              <Icon size={15} className="shrink-0" strokeWidth={2.1} />
               <span className="truncate">{meta.label}</span>
             </button>
           );
@@ -6041,19 +6018,6 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             Clear all
           </button>
         )}
-      </div>
-
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-xl font-extrabold leading-tight text-slate-950 sm:text-[22px]">
-            {((EXAM_CATEGORY_META[activeCategory] || {}).label || activeCategory).replace("Exam", "Exams")}
-          </h1>
-          <p className="mt-0 text-xs font-medium text-slate-500 sm:text-sm">Past papers. Real exam experience.</p>
-        </div>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1.5 text-[11px] font-extrabold text-slate-500 sm:gap-1 sm:px-3 sm:text-xs">
-          {entries.length} Exam{entries.length === 1 ? "" : "s"}
-          <ChevronRight size={14} />
-        </span>
       </div>
 
       {entries.length === 0 ? (
