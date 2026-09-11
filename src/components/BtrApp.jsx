@@ -5875,38 +5875,38 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
   const canExpand = !!(university || time || questions);
 
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white p-2.5 shadow-sm">
+    <div className="rounded-xl border border-slate-100 bg-white p-2 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
             style={{ background: `${color}1A` }}
           >
-            {locked ? <Lock size={16} className="text-blue-500" /> : <SubjectIcon size={16} strokeWidth={2.1} style={{ color }} />}
+            {locked ? <Lock size={14} className="text-blue-500" /> : <SubjectIcon size={14} strokeWidth={2.1} style={{ color }} />}
           </span>
           <div className="min-w-0">
             {categoryLabel && (
-              <span className="mb-0.5 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-extrabold text-blue-600">
+              <span className="mb-0 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-extrabold text-blue-600">
                 {categoryLabel}
               </span>
             )}
-            <span className="block truncate text-sm font-bold leading-tight text-slate-900">{title}</span>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500">
+            <span className="block truncate text-[13px] font-bold leading-tight text-slate-900">{title}</span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
                 {year}
               </span>
               {isPro && <ProBadge />}
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1">
           {locked ? (
             <button
               type="button"
               onClick={onUnlock}
-              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-600"
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600"
             >
-              <Lock size={10} /> Unlock
+              <Lock size={9} /> Unlock
             </button>
           ) : (
             openSlot
@@ -5916,40 +5916,40 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
-              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
           )}
         </div>
       </div>
 
       {expanded && canExpand && (
-        <div className="mt-3 flex items-stretch justify-between gap-1 rounded-2xl bg-slate-50 px-2 py-3.5">
+        <div className="mt-2 flex items-stretch justify-between gap-1 rounded-xl bg-slate-50 px-1.5 py-2">
           {university && (
-            <div className="flex flex-1 items-center justify-center gap-2 px-1">
-              <Landmark size={18} className="shrink-0 text-blue-600" />
+            <div className="flex flex-1 items-center justify-center gap-1.5 px-1">
+              <Landmark size={15} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
-                <div className="text-[11px] leading-tight text-slate-400">University</div>
-                <div className="truncate text-sm font-bold leading-tight text-slate-900">{university}</div>
+                <div className="text-[10px] leading-tight text-slate-400">University</div>
+                <div className="truncate text-xs font-bold leading-tight text-slate-900">{university}</div>
               </div>
             </div>
           )}
           {time && (
-            <div className="flex flex-1 items-center justify-center gap-2 border-l border-slate-200 px-1">
-              <Clock size={18} className="shrink-0 text-blue-600" />
+            <div className="flex flex-1 items-center justify-center gap-1.5 border-l border-slate-200 px-1">
+              <Clock size={15} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
-                <div className="text-[11px] leading-tight text-slate-400">Time</div>
-                <div className="truncate text-sm font-bold leading-tight text-slate-900">{time}</div>
+                <div className="text-[10px] leading-tight text-slate-400">Time</div>
+                <div className="truncate text-xs font-bold leading-tight text-slate-900">{time}</div>
               </div>
             </div>
           )}
           {questions && (
-            <div className="flex flex-1 items-center justify-center gap-2 border-l border-slate-200 px-1">
-              <HelpCircle size={18} className="shrink-0 text-blue-600" />
+            <div className="flex flex-1 items-center justify-center gap-1.5 border-l border-slate-200 px-1">
+              <HelpCircle size={15} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
-                <div className="text-[11px] leading-tight text-slate-400">Questions</div>
-                <div className="truncate text-sm font-bold leading-tight text-slate-900">{questions}</div>
+                <div className="text-[10px] leading-tight text-slate-400">Questions</div>
+                <div className="truncate text-xs font-bold leading-tight text-slate-900">{questions}</div>
               </div>
             </div>
           )}
