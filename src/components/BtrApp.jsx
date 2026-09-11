@@ -5746,55 +5746,55 @@ function PageHeader({
 }) {
   if (variant === "exam") {
     return (
-      <div className="mb-5">
-        <div className="flex items-center gap-3">
-          <img src={logoUrl} alt="BTR" className="h-[50px] w-[50px] shrink-0 object-contain sm:h-[58px] sm:w-[58px]" />
-          <span className="h-8 w-px shrink-0 sm:h-9" style={{ background: darkMode ? "rgba(148,163,184,0.35)" : "#CBD5E1" }} />
+      <div className="mb-3">
+        <div className="flex items-center gap-2.5">
+          <img src={logoUrl} alt="BTR" className="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10" />
+          <span className="h-6 w-px shrink-0 sm:h-7" style={{ background: darkMode ? "rgba(148,163,184,0.35)" : "#CBD5E1" }} />
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[22px] font-extrabold leading-tight sm:text-[26px]" style={{ color: theme.textPrimary }}>
+            <h2 className="truncate text-lg font-extrabold leading-tight sm:text-xl" style={{ color: theme.textPrimary }}>
               {title}
             </h2>
-            <p className="truncate text-[12px] font-medium sm:text-[15px]" style={{ color: theme.textSecondary }}>{subtitle}</p>
+            <p className="truncate text-[11px] font-medium sm:text-xs" style={{ color: theme.textSecondary }}>{subtitle}</p>
           </div>
           <button
             onClick={onNotifications}
             aria-label="Notifications"
-            className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11"
+            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:h-9 sm:w-9"
             style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
           >
-            <Bell size={24} strokeWidth={2.2} />
+            <Bell size={20} strokeWidth={2.2} />
             {notifications.length > 0 && (
-              <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
             )}
           </button>
           <button
             onClick={onProfile}
             aria-label="Profile"
-            className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-11 sm:w-11"
+            className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-9 sm:w-9"
             style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
           >
             {student?.photo ? (
               <img src={student.photo} alt={student.name} className="h-full w-full rounded-full object-cover" />
             ) : (
-              <User size={28} strokeWidth={2.1} />
+              <User size={22} strokeWidth={2.1} />
             )}
           </button>
         </div>
 
         <button
           onClick={onSearch}
-          className="mt-5 flex h-14 w-full items-center gap-3 rounded-full border px-5 text-left shadow-sm sm:h-[62px] sm:gap-4"
+          className="mt-3 flex h-11 w-full items-center gap-2.5 rounded-full border px-4 text-left shadow-sm sm:h-12 sm:gap-3"
           style={{
             background: darkMode ? theme.cardBg : "rgba(255,255,255,0.92)",
             borderColor: darkMode ? theme.cardBorder : "#DDE7F6",
-            boxShadow: darkMode ? "none" : "0 12px 32px rgba(31, 82, 160, 0.10)",
+            boxShadow: darkMode ? "none" : "0 8px 24px rgba(31, 82, 160, 0.08)",
           }}
         >
-          <Search size={27} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
-          <span className="min-w-0 flex-1 truncate text-[15px] font-medium sm:text-[17px]" style={{ color: theme.textMuted }}>
+          <Search size={20} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
+          <span className="min-w-0 flex-1 truncate text-[13px] font-medium sm:text-sm" style={{ color: theme.textMuted }}>
             {placeholder}
           </span>
-          <SlidersHorizontal size={24} strokeWidth={2.2} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
+          <SlidersHorizontal size={18} strokeWidth={2.2} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
         </button>
       </div>
     );
