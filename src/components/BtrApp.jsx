@@ -5860,8 +5860,8 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
     <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
       <div className="flex items-center justify-between gap-2.5">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-slate-100">
-            {locked ? <Lock size={16} className="text-blue-500" /> : <ExamFileIcon size={21} />}
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-slate-100">
+            {locked ? <Lock size={19} className="text-blue-500" /> : <ExamFileIcon size={27} />}
           </span>
           <div className="min-w-0">
             <span className="block truncate text-[14px] font-bold leading-tight text-slate-900">{title}</span>
