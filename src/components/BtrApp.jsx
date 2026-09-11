@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
+import NotesAiHelper from "@/components/NotesAiHelper";
 import btrLogoAsset from "@/assets/btr-logo.png.asset.json";
 import btrAuthLogoAsset from "@/assets/btr-auth-logo.png.asset.json";
 import btrLogoMainAsset from "@/assets/btr-logo-main.png.asset.json";
@@ -2079,7 +2080,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
       : "shrink-0 whitespace-nowrap rounded-full border border-sky-200 px-4 py-2 text-sm font-bold text-sky-600 transition hover:bg-sky-50";
   const filledClass =
     size === "exam"
-      ? "shrink-0 inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-100 bg-white px-4 text-[14px] font-extrabold text-blue-600 shadow-sm transition hover:bg-blue-50"
+      ? "shrink-0 inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full bg-blue-600 px-5 text-[16px] font-extrabold text-white shadow-sm transition hover:bg-blue-700"
       : size === "sm"
         ? "shrink-0 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-700"
         : "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
@@ -5745,48 +5746,55 @@ function PageHeader({
 }) {
   if (variant === "exam") {
     return (
-      <div className="mb-4 flex items-center gap-2">
-        <img
-          src={logoUrl}
-          alt="BTR"
-          className="h-12 w-12 shrink-0 overflow-hidden rounded-full object-cover"
-        />
+      <div className="mb-3">
+        <div className="flex items-center gap-2.5">
+          <img src={logoUrl} alt="BTR" className="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10" />
+          <span className="h-6 w-px shrink-0 sm:h-7" style={{ background: darkMode ? "rgba(148,163,184,0.35)" : "#CBD5E1" }} />
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-lg font-extrabold leading-tight sm:text-xl" style={{ color: theme.textPrimary }}>
+              {title}
+            </h2>
+            <p className="truncate text-[11px] font-medium sm:text-xs" style={{ color: theme.textSecondary }}>{subtitle}</p>
+          </div>
+          <button
+            onClick={onNotifications}
+            aria-label="Notifications"
+            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:h-9 sm:w-9"
+            style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
+          >
+            <Bell size={20} strokeWidth={2.2} />
+            {notifications.length > 0 && (
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
+            )}
+          </button>
+          <button
+            onClick={onProfile}
+            aria-label="Profile"
+            className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full sm:h-9 sm:w-9"
+            style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
+          >
+            {student?.photo ? (
+              <img src={student.photo} alt={student.name} className="h-full w-full rounded-full object-cover" />
+            ) : (
+              <User size={22} strokeWidth={2.1} />
+            )}
+          </button>
+        </div>
+
         <button
           onClick={onSearch}
-          className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full border px-4 text-left shadow-sm"
+          className="mt-3 flex h-11 w-full items-center gap-2.5 rounded-full border px-4 text-left shadow-sm sm:h-12 sm:gap-3"
           style={{
-            background: darkMode ? theme.cardBg : "#FFFFFF",
-            borderColor: darkMode ? theme.cardBorder : "#E6ECF6",
-            boxShadow: darkMode ? "none" : "0 5px 16px rgba(31, 82, 160, 0.07)",
+            background: darkMode ? theme.cardBg : "rgba(255,255,255,0.92)",
+            borderColor: darkMode ? theme.cardBorder : "#DDE7F6",
+            boxShadow: darkMode ? "none" : "0 8px 24px rgba(31, 82, 160, 0.08)",
           }}
         >
-          <Search size={20} strokeWidth={2.2} style={{ color: darkMode ? "#93C5FD" : "#1D4ED8" }} />
-          <span className="min-w-0 flex-1 truncate text-[14px] font-medium" style={{ color: theme.textMuted }}>
+          <Search size={20} strokeWidth={2.1} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
+          <span className="min-w-0 flex-1 truncate text-[13px] font-medium sm:text-sm" style={{ color: theme.textMuted }}>
             {placeholder}
           </span>
-        </button>
-        <button
-          onClick={onNotifications}
-          aria-label="Notifications"
-          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
-          style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
-        >
-          <Bell size={23} strokeWidth={2.1} />
-          {notifications.length > 0 && (
-            <span className="absolute right-1.5 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
-          )}
-        </button>
-        <button
-          onClick={onProfile}
-          aria-label="Profile"
-          className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full"
-          style={{ color: darkMode ? "#93C5FD" : "#0F172A" }}
-        >
-          {student?.photo ? (
-            <img src={student.photo} alt={student.name} className="h-full w-full rounded-full object-cover" />
-          ) : (
-            <User size={25} strokeWidth={2.1} />
-          )}
+          <SlidersHorizontal size={18} strokeWidth={2.2} style={{ color: darkMode ? "#93C5FD" : "#53647E" }} />
         </button>
       </div>
     );
@@ -5846,45 +5854,45 @@ function PageHeader({
 
 function FilterSelect({ icon: Icon, value, onChange, children }) {
   return (
-    <div className="relative min-w-0 shrink-0">
-      <Icon size={19} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
+    <div className="relative min-w-[0] shrink-0">
+      <Icon size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600" strokeWidth={2.1} />
       <select
         value={value}
         onChange={onChange}
-        className="h-11 max-w-[180px] appearance-none rounded-full border border-blue-100 bg-white py-2 pl-10 pr-8 text-[12px] font-extrabold text-slate-700 shadow-sm outline-none"
+        className="h-8 max-w-[130px] appearance-none rounded-full border border-blue-100 bg-white py-1 pl-7 pr-6 text-[11px] font-bold text-slate-700 shadow-sm outline-none"
       >
         {children}
       </select>
-      <ChevronDown size={17} className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+      <ChevronDown size={13} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-500" />
     </div>
   );
 }
 
 function ExamCard({ categoryLabel, subject, title, university, year, time, questions, isPro, locked, onUnlock, openSlot, defaultExpanded }) {
   const [expanded, setExpanded] = useState(!!defaultExpanded);
+  const SubjectIcon = subjectIcon(subject);
+  const color = subjectColor(subject);
   const canExpand = !!(university || time || questions);
 
   return (
-    <div
-      className="rounded-[18px] border border-blue-100 bg-white p-2.5 shadow-sm"
-      style={{ boxShadow: "0 5px 16px rgba(37, 99, 235, 0.08)" }}
-    >
-      <div className="flex min-h-[76px] items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+    <div className="rounded-xl border border-slate-100 bg-white p-2 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <span
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white"
-            style={{ boxShadow: "0 2px 7px rgba(37, 99, 235, 0.08)" }}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+            style={{ background: `${color}1A` }}
           >
-            {locked ? (
-              <Lock size={20} className="text-blue-500" />
-            ) : (
-              <FileText size={24} strokeWidth={2.1} className="text-blue-600" />
-            )}
+            {locked ? <Lock size={14} className="text-blue-500" /> : <SubjectIcon size={14} strokeWidth={2.1} style={{ color }} />}
           </span>
-          <div className="min-w-0 flex-1">
-            <span className="block truncate text-[17px] font-extrabold leading-tight text-slate-950">{title}</span>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-extrabold leading-none text-slate-500">
+          <div className="min-w-0">
+            {categoryLabel && (
+              <span className="mb-0 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-extrabold text-blue-600">
+                {categoryLabel}
+              </span>
+            )}
+            <span className="block truncate text-[13px] font-bold leading-tight text-slate-900">{title}</span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
                 {year}
               </span>
               {isPro && <ProBadge />}
@@ -5896,9 +5904,9 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
             <button
               type="button"
               onClick={onUnlock}
-              className="inline-flex h-10 items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-3 text-[12px] font-extrabold text-amber-600"
+              className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600"
             >
-              <Lock size={12} /> Unlock
+              <Lock size={9} /> Unlock
             </button>
           ) : (
             openSlot
@@ -5908,19 +5916,19 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
               type="button"
               onClick={() => setExpanded((v) => !v)}
               aria-label={expanded ? "Collapse" : "Expand"}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
-              {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
           )}
         </div>
       </div>
 
       {expanded && canExpand && (
-        <div className="mt-2.5 flex items-stretch justify-between gap-1 rounded-xl bg-slate-50 px-2 py-3">
+        <div className="mt-2 flex items-stretch justify-between gap-1 rounded-xl bg-slate-50 px-1.5 py-2">
           {university && (
             <div className="flex flex-1 items-center justify-center gap-1.5 px-1">
-              <Landmark size={16} className="shrink-0 text-blue-600" />
+              <Landmark size={15} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
                 <div className="text-[10px] leading-tight text-slate-400">University</div>
                 <div className="truncate text-xs font-bold leading-tight text-slate-900">{university}</div>
@@ -5929,7 +5937,7 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
           )}
           {time && (
             <div className="flex flex-1 items-center justify-center gap-1.5 border-l border-slate-200 px-1">
-              <Clock size={16} className="shrink-0 text-blue-600" />
+              <Clock size={15} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
                 <div className="text-[10px] leading-tight text-slate-400">Time</div>
                 <div className="truncate text-xs font-bold leading-tight text-slate-900">{time}</div>
@@ -5938,7 +5946,7 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
           )}
           {questions && (
             <div className="flex flex-1 items-center justify-center gap-1.5 border-l border-slate-200 px-1">
-              <HelpCircle size={16} className="shrink-0 text-blue-600" />
+              <HelpCircle size={15} className="shrink-0 text-blue-600" />
               <div className="min-w-0">
                 <div className="text-[10px] leading-tight text-slate-400">Questions</div>
                 <div className="truncate text-xs font-bold leading-tight text-slate-900">{questions}</div>
@@ -5985,7 +5993,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      <div className="mb-4 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm">
+      <div className="mb-3 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-0.5 shadow-sm">
         {EXAM_CATEGORIES.map((c) => {
           const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
           const Icon = meta.icon;
@@ -5994,19 +6002,19 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             <button
               key={c}
               onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex min-h-[48px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[11px] font-extrabold transition ${
-                active ? "text-white shadow-md" : "bg-transparent text-slate-700"
+              className={`flex min-h-[32px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[10px] font-bold transition ${
+                active ? "text-white shadow-sm" : "bg-transparent text-slate-700"
               }`}
               style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
             >
-              <Icon size={19} className="shrink-0" strokeWidth={2.1} />
+              <Icon size={12} className="shrink-0" strokeWidth={2.1} />
               <span className="truncate">{meta.label}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="mb-5 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+      <div className="mb-4 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1.5">
         <FilterSelect icon={Calendar} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
           <option value="all">All Years</option>
           {availableYears.map((y) => (
@@ -6031,15 +6039,28 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
         {anyFilterActive && (
           <button
             onClick={clearAll}
-            className="shrink-0 rounded-full bg-blue-50 px-4 py-3 text-sm font-extrabold text-blue-600"
+            className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1.5 text-[11px] font-bold text-blue-600"
           >
             Clear all
           </button>
         )}
       </div>
 
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-extrabold leading-tight text-slate-950 sm:text-[22px]">
+            {((EXAM_CATEGORY_META[activeCategory] || {}).label || activeCategory).replace("Exam", "Exams")}
+          </h1>
+          <p className="mt-0 text-xs font-medium text-slate-500 sm:text-sm">Past papers. Real exam experience.</p>
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1.5 text-[11px] font-extrabold text-slate-500 sm:gap-1 sm:px-3 sm:text-xs">
+          {entries.length} Exam{entries.length === 1 ? "" : "s"}
+          <ChevronRight size={14} />
+        </span>
+      </div>
+
       {entries.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-slate-200 bg-white/70 py-10 text-center text-sm text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 py-8 text-center text-xs text-slate-400">
           No {activeCategory.toLowerCase()} materials posted yet.
         </div>
       ) : (
@@ -6067,7 +6088,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
                     fileName={e.fileName}
                     label="Open"
                     variant="filled"
-                    size="exam"
+                    size="sm"
                     onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "exam", category: activeCategory })}
                   />
                 }
@@ -6349,11 +6370,14 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
   // Level 1: subjects (departments are not shown any more)
   if (!subject) {
     return (
-      <SubjectListCards
-        rows={rows}
-        onPick={(r) => setSubject(r)}
-        emptyLabel="No subjects yet."
-      />
+      <>
+        <SubjectListCards
+          rows={rows}
+          onPick={(r) => setSubject(r)}
+          emptyLabel="No subjects yet."
+        />
+        <NotesAiHelper subject={null} />
+      </>
     );
   }
 
@@ -6393,6 +6417,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
           })}
         </div>
       )}
+      <NotesAiHelper subject={current.name} />
     </div>
   );
 }
@@ -7931,7 +7956,6 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                 onSearch={() => setShowSearch(true)}
                 onNotifications={() => setShowNotifications(true)}
                 onProfile={() => setShowProfile(true)}
-                variant="exam"
               />
               <StudentExamBrowser data={data} onOpenInApp={trackAndOpen} isSubscribed={subscription.hasPlan && !subscription.isExpired} onUnlock={openSubscribeFlow} />
             </section>
