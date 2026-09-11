@@ -2081,9 +2081,11 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
   const filledClass =
     size === "exam"
       ? "shrink-0 inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full bg-blue-600 px-5 text-[16px] font-extrabold text-white shadow-sm transition hover:bg-blue-700"
-      : size === "sm"
-        ? "shrink-0 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-700"
-        : "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
+      : size === "examOpen"
+        ? "shrink-0 inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-full bg-white px-3 text-[11px] font-extrabold text-blue-600 shadow-sm ring-1 ring-slate-100 transition hover:bg-blue-50"
+        : size === "sm"
+          ? "shrink-0 inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-700"
+          : "shrink-0 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700";
   const textClass = "inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700 hover:text-sky-800 transition";
   const className = variant === "pill" ? pillClass : variant === "filled" ? filledClass : textClass;
 
@@ -2095,7 +2097,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
         className={className}
       >
         {label}
-        {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : 14} />}
+        {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : size === "examOpen" ? 12 : 14} />}
         {variant !== "pill" && variant !== "filled" && <ExternalLink size={14} />}
       </button>
     );
@@ -2111,7 +2113,7 @@ function MaterialLink({ url, htmlContent, htmlUrl, fileName, label = "Open mater
       className={className}
     >
       {label}
-      {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : 14} />}
+      {variant === "filled" && <ArrowRight size={size === "exam" ? 19 : size === "examOpen" ? 12 : 14} />}
       {variant !== "pill" && variant !== "filled" && <ExternalLink size={14} />}
     </button>
   );
@@ -5868,28 +5870,33 @@ function FilterSelect({ icon: Icon, value, onChange, children }) {
   );
 }
 
+// Uniform document/file glyph used on every exam card, matching the app's
+// reference design (a solid blue page with a folded corner and white text
+// lines) instead of a different icon per subject.
+function ExamFileIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6.5 2.75h6.75L18.5 8v12.75a1.5 1.5 0 0 1-1.5 1.5H6.5a1.5 1.5 0 0 1-1.5-1.5V4.25a1.5 1.5 0 0 1 1.5-1.5Z" fill="#2F6FED" />
+      <path d="M13.25 2.75 18.5 8h-3.75a1.5 1.5 0 0 1-1.5-1.5V2.75Z" fill="#1D4ED8" />
+      <rect x="8.5" y="12.25" width="7" height="1.3" rx="0.65" fill="#fff" />
+      <rect x="8.5" y="15.1" width="7" height="1.3" rx="0.65" fill="#fff" />
+      <rect x="8.5" y="17.95" width="4.5" height="1.3" rx="0.65" fill="#fff" opacity="0.85" />
+    </svg>
+  );
+}
+
 function ExamCard({ categoryLabel, subject, title, university, year, time, questions, isPro, locked, onUnlock, openSlot, defaultExpanded }) {
   const [expanded, setExpanded] = useState(!!defaultExpanded);
-  const SubjectIcon = subjectIcon(subject);
-  const color = subjectColor(subject);
   const canExpand = !!(university || time || questions);
 
   return (
     <div className="rounded-xl border border-slate-100 bg-white p-2 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: `${color}1A` }}
-          >
-            {locked ? <Lock size={14} className="text-blue-500" /> : <SubjectIcon size={14} strokeWidth={2.1} style={{ color }} />}
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-slate-100">
+            {locked ? <Lock size={14} className="text-blue-500" /> : <ExamFileIcon size={18} />}
           </span>
           <div className="min-w-0">
-            {categoryLabel && (
-              <span className="mb-0 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-[9px] font-extrabold text-blue-600">
-                {categoryLabel}
-              </span>
-            )}
             <span className="block truncate text-[13px] font-bold leading-tight text-slate-900">{title}</span>
             <div className="mt-0.5 flex flex-wrap items-center gap-1">
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
@@ -6088,7 +6095,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
                     fileName={e.fileName}
                     label="Open"
                     variant="filled"
-                    size="sm"
+                    size="examOpen"
                     onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "exam", category: activeCategory })}
                   />
                 }
