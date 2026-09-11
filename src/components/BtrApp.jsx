@@ -5993,7 +5993,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
 
   return (
     <div>
-      <div className="mb-4 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm">
+      <div className="mb-3 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-0.5 shadow-sm">
         {EXAM_CATEGORIES.map((c) => {
           const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
           const Icon = meta.icon;
@@ -6002,19 +6002,19 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
             <button
               key={c}
               onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex min-h-[38px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[11px] font-bold transition ${
-                active ? "text-white shadow-md" : "bg-transparent text-slate-700"
+              className={`flex min-h-[32px] min-w-0 items-center justify-center gap-1 rounded-full px-1 text-[10px] font-bold transition ${
+                active ? "text-white shadow-sm" : "bg-transparent text-slate-700"
               }`}
               style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
             >
-              <Icon size={14} className="shrink-0" strokeWidth={2.1} />
+              <Icon size={12} className="shrink-0" strokeWidth={2.1} />
               <span className="truncate">{meta.label}</span>
             </button>
           );
         })}
       </div>
 
-      <div className="mb-5 flex flex-nowrap items-center gap-2 overflow-x-auto pb-2">
+      <div className="mb-4 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1.5">
         <FilterSelect icon={Calendar} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
           <option value="all">All Years</option>
           {availableYears.map((y) => (
@@ -6039,32 +6039,32 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
         {anyFilterActive && (
           <button
             onClick={clearAll}
-            className="shrink-0 rounded-full bg-blue-50 px-3 py-2 text-xs font-bold text-blue-600"
+            className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1.5 text-[11px] font-bold text-blue-600"
           >
             Clear all
           </button>
         )}
       </div>
 
-      <div className="mb-5 flex items-end justify-between gap-3">
+      <div className="mb-3 flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="truncate text-[23px] font-extrabold leading-tight text-slate-950 sm:text-[26px]">
+          <h1 className="truncate text-xl font-extrabold leading-tight text-slate-950 sm:text-[22px]">
             {((EXAM_CATEGORY_META[activeCategory] || {}).label || activeCategory).replace("Exam", "Exams")}
           </h1>
-          <p className="mt-0.5 text-[13px] font-medium text-slate-500 sm:text-[15px]">Past papers. Real exam experience.</p>
+          <p className="mt-0 text-xs font-medium text-slate-500 sm:text-sm">Past papers. Real exam experience.</p>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 px-3 py-2 text-xs font-extrabold text-slate-500 sm:gap-1.5 sm:px-4 sm:text-sm">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1.5 text-[11px] font-extrabold text-slate-500 sm:gap-1 sm:px-3 sm:text-xs">
           {entries.length} Exam{entries.length === 1 ? "" : "s"}
-          <ChevronRight size={17} />
+          <ChevronRight size={14} />
         </span>
       </div>
 
       {entries.length === 0 ? (
-        <div className="rounded-[22px] border border-dashed border-slate-200 bg-white/70 py-10 text-center text-sm text-slate-400">
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 py-8 text-center text-xs text-slate-400">
           No {activeCategory.toLowerCase()} materials posted yet.
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2.5">
           {entries.map((e) => {
             const locked = e.isPro && !isSubscribed;
             return (
