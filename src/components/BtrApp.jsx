@@ -7924,10 +7924,9 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           {tab === "notes" && (
             <section className="btr-fade-in">
               <PageHeader
+                variant="exam"
                 logoUrl={homeLogoUrl}
-                title={t(lang, "notes")}
-                subtitle="Browse and study your notes"
-                placeholder="Search notes, topics..."
+                placeholder="Search notes, topics, subjects..."
                 theme={theme}
                 darkMode={darkMode}
                 student={student}
