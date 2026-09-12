@@ -6087,13 +6087,15 @@ function mergedSubjects(data) {
   return rows;
 }
 
-function SubjectListCards({ rows, onPick, title = "Subjects", emptyLabel }) {
+function SubjectListCards({ rows, onPick, title = "Subjects", emptyLabel, showHeader = true }) {
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-xl font-extrabold text-slate-900">{title}</h3>
-        <span className="text-sm font-bold text-blue-600">{rows.length} total</span>
-      </div>
+      {showHeader && (
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-xl font-extrabold text-slate-900">{title}</h3>
+          <span className="text-sm font-bold text-blue-600">{rows.length} total</span>
+        </div>
+      )}
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 py-14 text-center text-sm text-slate-400">
           {emptyLabel}
