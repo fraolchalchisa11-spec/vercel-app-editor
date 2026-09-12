@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
-import NotesAiHelper from "@/components/NotesAiHelper";
+
 import btrLogoAsset from "@/assets/btr-logo.png.asset.json";
 import btrAuthLogoAsset from "@/assets/btr-auth-logo.png.asset.json";
 import btrLogoMainAsset from "@/assets/btr-logo-main.png.asset.json";
@@ -6337,7 +6337,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
           onPick={(r) => setSubject(r)}
           emptyLabel="No subjects yet."
         />
-        <NotesAiHelper subject={null} />
+        
       </>
     );
   }
@@ -6378,7 +6378,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
           })}
         </div>
       )}
-      <NotesAiHelper subject={current.name} />
+      
     </div>
   );
 }
