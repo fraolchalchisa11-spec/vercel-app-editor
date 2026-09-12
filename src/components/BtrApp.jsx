@@ -5933,7 +5933,7 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
   );
 }
 
-function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
+function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode }) {
   const [activeCategory, setActiveCategory] = useState(EXAM_CATEGORIES[0]);
   const [yearFilter, setYearFilter] = useState("all");
   const [universityFilter, setUniversityFilter] = useState("all");
@@ -5966,98 +5966,111 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
   };
 
   return (
-    <div>
-      <div className="mb-3 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm">
-        {EXAM_CATEGORIES.map((c) => {
-          const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
-          const Icon = meta.icon;
-          const active = activeCategory === c;
-          return (
-            <button
-              key={c}
-              onClick={() => { setActiveCategory(c); clearAll(); }}
-              className={`flex min-h-[40px] min-w-0 items-center justify-center gap-1.5 rounded-full px-1.5 text-[12px] font-bold transition ${
-                active ? "text-white shadow-sm" : "bg-transparent text-slate-700"
-              }`}
-              style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
-            >
-              <Icon size={15} className="shrink-0" strokeWidth={2.1} />
-              <span className="truncate">{meta.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mb-4 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1.5">
-        <FilterSelect icon={Calendar} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
-          <option value="all">All Years</option>
-          {availableYears.map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </FilterSelect>
-
-        <FilterSelect icon={Landmark} value={universityFilter} onChange={(e) => setUniversityFilter(e.target.value)}>
-          <option value="all">All Universities</option>
-          {availableUniversities.map((u) => (
-            <option key={u} value={u}>{u}</option>
-          ))}
-        </FilterSelect>
-
-        <FilterSelect icon={BookOpen} value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
-          <option value="all">All Subjects</option>
-          {availableSubjects.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </FilterSelect>
-
-        {anyFilterActive && (
-          <button
-            onClick={clearAll}
-            className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1.5 text-[11px] font-bold text-blue-600"
-          >
-            Clear all
-          </button>
-        )}
-      </div>
-
-      {entries.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 py-8 text-center text-xs text-slate-400">
-          No {activeCategory.toLowerCase()} materials posted yet.
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {entries.map((e) => {
-            const locked = e.isPro && !isSubscribed;
+    <div className="relative">
+      <div
+        className="sticky top-0 z-20 -mx-5 px-5 py-3"
+        style={{
+          background: darkMode ? theme.headerBg : "rgba(255,255,255,0.95)",
+          backdropFilter: darkMode ? "none" : "blur(10px)",
+          WebkitBackdropFilter: darkMode ? "none" : "blur(10px)",
+          borderBottom: `1px solid ${darkMode ? theme.cardBorder : "rgba(226,232,240,0.6)"}`,
+        }}
+      >
+        {header}
+        <div className="mb-3 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm">
+          {EXAM_CATEGORIES.map((c) => {
+            const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
+            const Icon = meta.icon;
+            const active = activeCategory === c;
             return (
-              <ExamCard
-                key={e.id}
-                categoryLabel={(EXAM_CATEGORY_META[activeCategory] || {}).label || activeCategory}
-                subject={e.subject}
-                title={e.title || (e.subject ? `${e.subject} BTR` : `${activeCategory} ${e.year}`)}
-                university={e.university}
-                year={e.year}
-                time={e.time}
-                questions={e.questions}
-                isPro={e.isPro}
-                locked={locked}
-                onUnlock={onUnlock}
-                openSlot={
-                  <MaterialLink
-                    url={e.link}
-                    htmlContent={e.htmlContent}
-                    htmlUrl={e.htmlUrl}
-                    fileName={e.fileName}
-                    label="Open"
-                    variant="filled"
-                    size="examOpen"
-                    onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "exam", category: activeCategory })}
-                  />
-                }
-              />
+              <button
+                key={c}
+                onClick={() => { setActiveCategory(c); clearAll(); }}
+                className={`flex min-h-[40px] min-w-0 items-center justify-center gap-1.5 rounded-full px-1.5 text-[12px] font-bold transition ${
+                  active ? "text-white shadow-sm" : "bg-transparent text-slate-700"
+                }`}
+                style={active ? { background: "linear-gradient(135deg, #3B82F6, #1D4ED8)" } : undefined}
+              >
+                <Icon size={15} className="shrink-0" strokeWidth={2.1} />
+                <span className="truncate">{meta.label}</span>
+              </button>
             );
           })}
         </div>
-      )}
+
+        <div className="flex flex-nowrap items-center gap-2 overflow-x-auto pb-1.5">
+          <FilterSelect icon={Calendar} value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}>
+            <option value="all">All Years</option>
+            {availableYears.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </FilterSelect>
+
+          <FilterSelect icon={Landmark} value={universityFilter} onChange={(e) => setUniversityFilter(e.target.value)}>
+            <option value="all">All Universities</option>
+            {availableUniversities.map((u) => (
+              <option key={u} value={u}>{u}</option>
+            ))}
+          </FilterSelect>
+
+          <FilterSelect icon={BookOpen} value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
+            <option value="all">All Subjects</option>
+            {availableSubjects.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </FilterSelect>
+
+          {anyFilterActive && (
+            <button
+              onClick={clearAll}
+              className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1.5 text-[11px] font-bold text-blue-600"
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="pt-2">
+        {entries.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 py-8 text-center text-xs text-slate-400">
+            No {activeCategory.toLowerCase()} materials posted yet.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {entries.map((e) => {
+              const locked = e.isPro && !isSubscribed;
+              return (
+                <ExamCard
+                  key={e.id}
+                  categoryLabel={(EXAM_CATEGORY_META[activeCategory] || {}).label || activeCategory}
+                  subject={e.subject}
+                  title={e.title || (e.subject ? `${e.subject} BTR` : `${activeCategory} ${e.year}`)}
+                  university={e.university}
+                  year={e.year}
+                  time={e.time}
+                  questions={e.questions}
+                  isPro={e.isPro}
+                  locked={locked}
+                  onUnlock={onUnlock}
+                  openSlot={
+                    <MaterialLink
+                      url={e.link}
+                      htmlContent={e.htmlContent}
+                      htmlUrl={e.htmlUrl}
+                      fileName={e.fileName}
+                      label="Open"
+                      variant="filled"
+                      size="examOpen"
+                      onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "exam", category: activeCategory })}
+                    />
+                  }
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
