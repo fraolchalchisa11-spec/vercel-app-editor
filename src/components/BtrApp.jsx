@@ -6392,27 +6392,28 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
         <h3 className="mt-1 text-sm font-bold text-slate-800">{current.name}</h3>
       </div>
 
-      {sorted.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
-          No notes yet for this subject.
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {sorted.map((n, i) => {
-            const locked = n.isPro && !isSubscribed;
-            return (
-              <ChapterCard
-                key={n.id}
-                chapter={n}
-                locked={locked}
-                onUnlock={onUnlock}
-                onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: current.name })}
-              />
-            );
-          })}
-        </div>
-      )}
-      
+      <div className="pt-3">
+        {sorted.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
+            No notes yet for this subject.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {sorted.map((n, i) => {
+              const locked = n.isPro && !isSubscribed;
+              return (
+                <ChapterCard
+                  key={n.id}
+                  chapter={n}
+                  locked={locked}
+                  onUnlock={onUnlock}
+                  onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: current.name })}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
