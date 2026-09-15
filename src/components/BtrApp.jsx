@@ -6338,22 +6338,38 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
   );
 }
 
-function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
+function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode }) {
   const [subject, setSubject] = useState(null);
 
   const rows = mergedSubjects(data).map((r) => ({ ...r, count: r.notes.length }));
 
+  const stickyStyle = {
+    background: darkMode ? theme.headerBg : "rgba(255,255,255,0.95)",
+    backdropFilter: darkMode ? "none" : "blur(10px)",
+    WebkitBackdropFilter: darkMode ? "none" : "blur(10px)",
+    borderBottom: `1px solid ${darkMode ? theme.cardBorder : "rgba(226,232,240,0.6)"}`,
+  };
+
   // Level 1: subjects (departments are not shown any more)
   if (!subject) {
     return (
-      <>
-        <SubjectListCards
-          rows={rows}
-          onPick={(r) => setSubject(r)}
-          emptyLabel="No subjects yet."
-        />
-        
-      </>
+      <div className="relative">
+        <div className="sticky top-0 z-20 -mx-5 px-5 py-3" style={stickyStyle}>
+          {header}
+          <div className="mt-2 flex items-center justify-between">
+            <h3 className="text-base font-extrabold text-slate-900">Subjects</h3>
+            <span className="text-xs font-bold text-blue-600">{rows.length} total</span>
+          </div>
+        </div>
+        <div className="pt-3">
+          <SubjectListCards
+            rows={rows}
+            onPick={(r) => setSubject(r)}
+            emptyLabel="No subjects yet."
+            showHeader={false}
+          />
+        </div>
+      </div>
     );
   }
 
@@ -6364,14 +6380,17 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock }) {
   });
 
   return (
-    <div>
-      <button
-        onClick={() => setSubject(null)}
-        className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
-      >
-        ← Back to subjects
-      </button>
-      <h3 className="mb-3 text-sm font-bold text-slate-800">{current.name}</h3>
+    <div className="relative">
+      <div className="sticky top-0 z-20 -mx-5 px-5 py-3" style={stickyStyle}>
+        {header}
+        <button
+          onClick={() => setSubject(null)}
+          className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
+        >
+          ← Back to subjects
+        </button>
+        <h3 className="mt-1 text-sm font-bold text-slate-800">{current.name}</h3>
+      </div>
 
       {sorted.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
