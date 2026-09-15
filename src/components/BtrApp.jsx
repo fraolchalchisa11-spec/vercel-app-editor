@@ -7940,37 +7940,55 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
 
           {tab === "exams" && (
             <section className="btr-fade-in">
-              <PageHeader
-                variant="exam"
-                logoUrl={homeLogoUrl}
-                placeholder="Search exams, years, subjects..."
+              <StudentExamBrowser
+                data={data}
+                onOpenInApp={trackAndOpen}
+                isSubscribed={subscription.hasPlan && !subscription.isExpired}
+                onUnlock={openSubscribeFlow}
                 theme={theme}
                 darkMode={darkMode}
-                student={student}
-                notifications={notifications}
-                onSearch={() => setShowSearch(true)}
-                onNotifications={() => setShowNotifications(true)}
-                onProfile={() => setShowProfile(true)}
+                header={
+                  <PageHeader
+                    variant="exam"
+                    logoUrl={homeLogoUrl}
+                    placeholder="Search exams, years, subjects..."
+                    theme={theme}
+                    darkMode={darkMode}
+                    student={student}
+                    notifications={notifications}
+                    onSearch={() => setShowSearch(true)}
+                    onNotifications={() => setShowNotifications(true)}
+                    onProfile={() => setShowProfile(true)}
+                  />
+                }
               />
-              <StudentExamBrowser data={data} onOpenInApp={trackAndOpen} isSubscribed={subscription.hasPlan && !subscription.isExpired} onUnlock={openSubscribeFlow} />
             </section>
           )}
 
           {tab === "notes" && (
             <section className="btr-fade-in">
-              <PageHeader
-                variant="exam"
-                logoUrl={homeLogoUrl}
-                placeholder="Search notes, topics, subjects..."
+              <StudentNoteBrowser
+                data={data}
+                onOpenInApp={trackAndOpen}
+                isSubscribed={subscription.hasPlan && !subscription.isExpired}
+                onUnlock={openSubscribeFlow}
                 theme={theme}
                 darkMode={darkMode}
-                student={student}
-                notifications={notifications}
-                onSearch={() => setShowSearch(true)}
-                onNotifications={() => setShowNotifications(true)}
-                onProfile={() => setShowProfile(true)}
+                header={
+                  <PageHeader
+                    variant="exam"
+                    logoUrl={homeLogoUrl}
+                    placeholder="Search notes, topics, subjects..."
+                    theme={theme}
+                    darkMode={darkMode}
+                    student={student}
+                    notifications={notifications}
+                    onSearch={() => setShowSearch(true)}
+                    onNotifications={() => setShowNotifications(true)}
+                    onProfile={() => setShowProfile(true)}
+                  />
+                }
               />
-              <StudentNoteBrowser data={data} onOpenInApp={trackAndOpen} isSubscribed={subscription.hasPlan && !subscription.isExpired} onUnlock={openSubscribeFlow} />
             </section>
           )}
         </main>
