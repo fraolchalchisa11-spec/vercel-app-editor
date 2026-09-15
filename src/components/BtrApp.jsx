@@ -7707,7 +7707,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
         .btr-fade-in { animation: fadeSlide 220ms ease-out; }
       `}</style>
       <div
-        className={`min-h-screen w-full max-w-full overflow-x-hidden pb-24${darkMode ? " dark-mode" : ""}`}
+        className={`min-h-screen w-full max-w-full [overflow-x:clip] pb-24${darkMode ? " dark-mode" : ""}`}
         style={
           darkMode
             ? { backgroundColor: theme.pageBg }
