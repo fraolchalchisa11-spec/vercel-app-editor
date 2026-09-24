@@ -1318,6 +1318,7 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
 
   const [signupMode, setSignupMode] = useState(false);
   const [signupName, setSignupName] = useState("");
+  const [signupGrade, setSignupGrade] = useState("Freshman");
   const [signupId, setSignupId] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPw, setSignupPw] = useState("");
@@ -1327,6 +1328,7 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
 
   const resetSignupForm = () => {
     setSignupName("");
+    setSignupGrade("Freshman");
     setSignupId(generateStudentId(data?.students));
     setSignupEmail("");
     setSignupPw("");
@@ -1338,6 +1340,10 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
     setSignupErr("");
     if (!signupName.trim()) {
       setSignupErr("Enter your full name.");
+      return;
+    }
+    if (!GRADE_LEVELS.includes(signupGrade)) {
+      setSignupErr("Choose your grade level.");
       return;
     }
     if (!signupId.trim()) {
@@ -1373,7 +1379,7 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
       name: signupName.trim(),
       studentId: signupId.trim(),
       password: signupPw,
-      grade: "",
+      grade: signupGrade,
       email: signupEmail.trim(),
       planType: "",
       planPrice: "",
@@ -1807,6 +1813,28 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
                   onChange={(e) => setSignupName(e.target.value)}
                   autoComplete="name"
                 />
+              </div>
+
+              <p className="mb-2 text-[15px] font-bold text-slate-900">Grade level</p>
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                {GRADE_LEVELS.map((g) => {
+                  const active = signupGrade === g;
+                  return (
+                    <button
+                      type="button"
+                      key={g}
+                      onClick={() => setSignupGrade(g)}
+                      className={`rounded-2xl border py-3 text-[14px] font-bold transition ${
+                        active
+                          ? "border-transparent text-white"
+                          : "border-slate-200 bg-white text-slate-600"
+                      }`}
+                      style={active ? { background: "linear-gradient(90deg,#1141B0,#1B54D8)" } : undefined}
+                    >
+                      {g}
+                    </button>
+                  );
+                })}
               </div>
 
               <p className="mb-2 text-[15px] font-bold text-slate-900">Your Student ID</p>
@@ -3318,6 +3346,29 @@ const EXAM_CATEGORY_META = {
   "Practice exam": { label: "Practice Exam", icon: Pencil },
 };
 const NOTE_TYPES = ["Full Note"];
+
+/* ----------------------------- Grade levels ----------------------------- */
+// Chosen once at signup. Freshman students see the exam categories exactly
+// as stored ("Final Exam" / "Mid Exam" / "Practice Exam"). Grade 12 students
+// see the same underlying categories relabeled to match their curriculum
+// ("Entrance Exam" / "Model Exam" / "Practice Exam") — the data itself is
+// unchanged, only the label shown to the student differs.
+const GRADE_LEVELS = ["Freshman", "Grade 12"];
+
+function isGrade12(grade) {
+  return String(grade || "").trim().toLowerCase() === "grade 12";
+}
+
+// Returns an EXAM_CATEGORY_META-shaped object with labels adjusted for the
+// student's grade level.
+function examCategoryMetaFor(grade) {
+  if (!isGrade12(grade)) return EXAM_CATEGORY_META;
+  return {
+    "Final exam": { ...EXAM_CATEGORY_META["Final exam"], label: "Entrance Exam" },
+    "Mid exam": { ...EXAM_CATEGORY_META["Mid exam"], label: "Model Exam" },
+    "Practice exam": EXAM_CATEGORY_META["Practice exam"],
+  };
+}
 
 /* ----------------------------- Freshman subjects (for exams) ----------------------------- */
 // Fixed list of common Ethiopian freshman courses, each with its own icon/color
@@ -5933,7 +5984,8 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
   );
 }
 
-function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode }) {
+function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode, grade }) {
+  const categoryMeta = useMemo(() => examCategoryMetaFor(grade), [grade]);
   const [activeCategory, setActiveCategory] = useState(EXAM_CATEGORIES[0]);
   const [yearFilter, setYearFilter] = useState("all");
   const [universityFilter, setUniversityFilter] = useState("all");
@@ -5979,7 +6031,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
         {header}
         <div className="mb-3 grid grid-cols-3 items-stretch gap-0 rounded-full border border-blue-100 bg-white p-1 shadow-sm">
           {EXAM_CATEGORIES.map((c) => {
-            const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
+            const meta = categoryMeta[c] || { label: c, icon: FileText };
             const Icon = meta.icon;
             const active = activeCategory === c;
             return (
@@ -6034,7 +6086,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
       <div className="pt-2">
         {entries.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 py-8 text-center text-xs text-slate-400">
-            No {activeCategory.toLowerCase()} materials posted yet.
+            No {((categoryMeta[activeCategory] || {}).label || activeCategory).toLowerCase()} materials posted yet.
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -6043,7 +6095,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
               return (
                 <ExamCard
                   key={e.id}
-                  categoryLabel={(EXAM_CATEGORY_META[activeCategory] || {}).label || activeCategory}
+                  categoryLabel={(categoryMeta[activeCategory] || {}).label || activeCategory}
                   subject={e.subject}
                   title={e.title || (e.subject ? `${e.subject} BTR` : `${activeCategory} ${e.year}`)}
                   university={e.university}
@@ -6790,7 +6842,8 @@ function FloatingActionButton({ actions, theme }) {
 
 /* ----------------------------- Search overlay ----------------------------- */
 
-function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onOpenAnnouncement, onOpenSubject }) {
+function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onOpenAnnouncement, onOpenSubject, grade }) {
+  const categoryMeta = useMemo(() => examCategoryMetaFor(grade), [grade]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const inputRef = useRef(null);
@@ -6842,9 +6895,9 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
   const TABS = [
     { key: "all", label: "All" },
     { key: "notes", label: "Notes" },
-    { key: "final", label: "Final Exams" },
-    { key: "mid", label: "Mid Exams" },
-    { key: "practice", label: "Practice Exams" },
+    { key: "final", label: `${categoryMeta["Final exam"].label}s` },
+    { key: "mid", label: `${categoryMeta["Mid exam"].label}s` },
+    { key: "practice", label: `${categoryMeta["Practice exam"].label}s` },
   ];
 
   const show = (key) => filter === "all" || filter === key;
@@ -6992,23 +7045,26 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
             )}
 
             {[
-              { key: "final", label: "Final Exams", list: results.final },
-              { key: "mid", label: "Mid Exams", list: results.mid },
-              { key: "practice", label: "Practice Exams", list: results.practice },
+              { key: "final", label: `${categoryMeta["Final exam"].label}s`, list: results.final },
+              { key: "mid", label: `${categoryMeta["Mid exam"].label}s`, list: results.mid },
+              { key: "practice", label: `${categoryMeta["Practice exam"].label}s`, list: results.practice },
             ].map(
               (grp) =>
                 show(grp.key) &&
                 grp.list.length > 0 && (
                   <Section key={grp.key} label={grp.label}>
-                    {grp.list.map((e) => (
-                      <Row
-                        key={e.id}
-                        icon={<FileText size={16} />}
-                        title={e.title || `${e.category} ${e.year}`}
-                        subtitle={`${e.category}${e.year ? ` · ${e.year}` : ""}`}
-                        onClick={() => onOpenExam(e)}
-                      />
-                    ))}
+                    {grp.list.map((e) => {
+                      const catLabel = (categoryMeta[e.category] || {}).label || e.category;
+                      return (
+                        <Row
+                          key={e.id}
+                          icon={<FileText size={16} />}
+                          title={e.title || `${catLabel} ${e.year}`}
+                          subtitle={`${catLabel}${e.year ? ` · ${e.year}` : ""}`}
+                          onClick={() => onOpenExam(e)}
+                        />
+                      );
+                    })}
                   </Section>
                 )
             )}
@@ -7624,6 +7680,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
 
   // Home stat tiles reflect materials across every department, not just the
   // student's own — matching what the Exams/Notes tabs show.
+  const studentCategoryMeta = useMemo(() => examCategoryMetaFor(student.grade), [student.grade]);
   const allExams = EXAM_CATEGORIES.flatMap((c) =>
     (data.examCategories[c] || []).map((e) => ({ ...e, category: c }))
   );
@@ -7642,7 +7699,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
       ? allExams.map((e) => ({
           id: `exam_${e.id}`,
           type: "exam",
-          title: `${e.category}: ${e.title || e.year}`,
+          title: `${(studentCategoryMeta[e.category] || {}).label || e.category}: ${e.title || e.year}`,
           createdAt: e.createdAt || e.year,
         }))
       : [];
@@ -7947,6 +8004,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                 onUnlock={openSubscribeFlow}
                 theme={theme}
                 darkMode={darkMode}
+                grade={student.grade}
                 header={
                   <PageHeader
                     variant="exam"
@@ -8040,6 +8098,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           theme={theme}
           lang={lang}
           data={data}
+          grade={student.grade}
           onClose={() => setShowSearch(false)}
           onOpenExam={(item) => {
             setShowSearch(false);
