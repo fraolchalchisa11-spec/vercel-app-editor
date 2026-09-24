@@ -952,6 +952,11 @@ function normalizeData(parsed) {
   }
   for (const cat of EXAM_CATEGORIES) {
     if (!Array.isArray(parsed.examCategories[cat])) parsed.examCategories[cat] = [];
+    // Legacy entries predate grade-level tagging — treat them as Freshman
+    // content so nothing existing disappears from the Freshman view.
+    parsed.examCategories[cat] = parsed.examCategories[cat].map((e) =>
+      e && !e.gradeLevel ? { ...e, gradeLevel: "Freshman" } : e
+    );
   }
 
   return parsed;
@@ -3512,14 +3517,21 @@ function HtmlUploadField({ fileName, onUpload, onRemove }) {
   );
 }
 
-function ExamYearForm({ initial, onSave, onClose, category, data }) {
+function ExamYearForm({ initial, onSave, onClose, category, data, defaultGrade }) {
   const [form, setForm] = useState(
-    initial || { year: String(currentEthiopianYearGuess()), title: "", subject: "", university: "", time: "", questions: "", link: "", htmlContent: "", htmlUrl: "", fileName: "", isPro: false }
+    initial || { year: String(currentEthiopianYearGuess()), title: "", subject: "", university: "", time: "", questions: "", link: "", htmlContent: "", htmlUrl: "", fileName: "", isPro: false, gradeLevel: defaultGrade || "Freshman" }
   );
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
     <Modal title={initial ? `Edit ${category} entry` : `Add ${category} year`} onClose={onClose}>
+      <Field label="Grade level">
+        <select className={inputCls} value={form.gradeLevel || "Freshman"} onChange={set("gradeLevel")}>
+          {GRADE_LEVELS.map((g) => (
+            <option key={g} value={g}>{g}</option>
+          ))}
+        </select>
+      </Field>
       <Field label="Subject">
         <select className={inputCls} value={form.subject} onChange={set("subject")}>
           <option value="">Choose a subject</option>
@@ -3598,13 +3610,17 @@ function ExamYearForm({ initial, onSave, onClose, category, data }) {
 }
 
 function AdminExams({ data, setData, onOpenInApp }) {
+  const [gradeFilter, setGradeFilter] = useState(GRADE_LEVELS[0]);
   const [activeCategory, setActiveCategory] = useState(EXAM_CATEGORIES[0]);
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
-  const allEntriesInCategory = data.examCategories[activeCategory] || [];
+  const categoryMeta = examCategoryMetaFor(gradeFilter);
+  const allEntriesInCategory = (data.examCategories[activeCategory] || []).filter(
+    (e) => (e.gradeLevel || "Freshman") === gradeFilter
+  );
   const entries = [...allEntriesInCategory]
     .filter((e) => subjectFilter === "all" || (e.subject || "") === subjectFilter)
     .sort((a, b) => String(b.year).localeCompare(String(a.year)));
@@ -3666,10 +3682,24 @@ function AdminExams({ data, setData, onOpenInApp }) {
 
   return (
     <div>
+      <div className="mb-3 flex gap-1.5">
+        {GRADE_LEVELS.map((g) => (
+          <button
+            key={g}
+            onClick={() => setGradeFilter(g)}
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${
+              gradeFilter === g ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"
+            }`}
+          >
+            {g}
+          </button>
+        ))}
+      </div>
+
       <div className="mb-3 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="flex gap-1.5 overflow-x-auto">
           {EXAM_CATEGORIES.map((c) => {
-            const meta = EXAM_CATEGORY_META[c] || { label: c, icon: FileText };
+            const meta = categoryMeta[c] || { label: c, icon: FileText };
             const Icon = meta.icon;
             return (
               <button
@@ -3711,7 +3741,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
       {entries.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 py-14 text-center">
           <FileText size={28} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-sm text-slate-500">No {activeCategory.toLowerCase()} entries yet.</p>
+          <p className="text-sm text-slate-500">No {(categoryMeta[activeCategory]?.label || activeCategory).toLowerCase()} entries yet for {gradeFilter}.</p>
         </div>
       ) : (
         <div className="grid gap-3">
@@ -3733,7 +3763,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
                       </span>
                     );
                   })()}
-                  <div className="font-semibold text-slate-800">{e.title || `${activeCategory} ${e.year}`}</div>
+                  <div className="font-semibold text-slate-800">{e.title || `${categoryMeta[activeCategory]?.label || activeCategory} ${e.year}`}</div>
                   {e.isPro && <ProBadge />}
                 </div>
                 <div className="mt-0.5 text-xs text-slate-500">
@@ -3756,7 +3786,7 @@ function AdminExams({ data, setData, onOpenInApp }) {
       )}
 
       {adding && (
-        <ExamYearForm category={activeCategory} onSave={addEntry} onClose={() => setAdding(false)} data={data} />
+        <ExamYearForm category={activeCategory} defaultGrade={gradeFilter} onSave={addEntry} onClose={() => setAdding(false)} data={data} />
       )}
       {editing && (
         <ExamYearForm
@@ -5991,7 +6021,10 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
   const [universityFilter, setUniversityFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
 
-  const catEntries = [...(data.examCategories[activeCategory] || [])];
+  const studentGradeLevel = isGrade12(grade) ? "Grade 12" : "Freshman";
+  const catEntries = (data.examCategories[activeCategory] || []).filter(
+    (e) => (e.gradeLevel || "Freshman") === studentGradeLevel
+  );
 
   const availableYears = Array.from(new Set(catEntries.map((e) => e.year).filter(Boolean)))
     .sort((a, b) => String(b).localeCompare(String(a)));
@@ -6058,12 +6091,14 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
             ))}
           </FilterSelect>
 
-          <FilterSelect icon={Landmark} value={universityFilter} onChange={(e) => setUniversityFilter(e.target.value)}>
-            <option value="all">All Universities</option>
-            {availableUniversities.map((u) => (
-              <option key={u} value={u}>{u}</option>
-            ))}
-          </FilterSelect>
+          {!isGrade12(grade) && (
+            <FilterSelect icon={Landmark} value={universityFilter} onChange={(e) => setUniversityFilter(e.target.value)}>
+              <option value="all">All Universities</option>
+              {availableUniversities.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </FilterSelect>
+          )}
 
           <FilterSelect icon={BookOpen} value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)}>
             <option value="all">All Subjects</option>
@@ -6098,7 +6133,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
                   categoryLabel={(categoryMeta[activeCategory] || {}).label || activeCategory}
                   subject={e.subject}
                   title={e.title || (e.subject ? `${e.subject} BTR` : `${activeCategory} ${e.year}`)}
-                  university={e.university}
+                  university={isGrade12(grade) ? "" : e.university}
                   year={e.year}
                   time={e.time}
                   questions={e.questions}
@@ -6857,8 +6892,10 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
   const results = useMemo(() => {
     if (!q) return { subjects: [], notes: [], final: [], mid: [], practice: [], announcements: [] };
 
+    const studentGradeLevel = isGrade12(grade) ? "Grade 12" : "Freshman";
     const byCat = (cat) =>
       (data.examCategories?.[cat] || [])
+        .filter((e) => (e.gradeLevel || "Freshman") === studentGradeLevel)
         .filter((e) => `${e.title || ""} ${cat} ${e.year || ""}`.toLowerCase().includes(q))
         .map((e) => ({ ...e, category: cat }))
         .slice(0, 12);
@@ -6890,7 +6927,7 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
       practice: practiceCat ? byCat(practiceCat) : [],
       announcements,
     };
-  }, [q, data]);
+  }, [q, data, grade]);
 
   const TABS = [
     { key: "all", label: "All" },
@@ -7681,8 +7718,11 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
   // Home stat tiles reflect materials across every department, not just the
   // student's own — matching what the Exams/Notes tabs show.
   const studentCategoryMeta = useMemo(() => examCategoryMetaFor(student.grade), [student.grade]);
+  const studentGradeLevel = isGrade12(student.grade) ? "Grade 12" : "Freshman";
   const allExams = EXAM_CATEGORIES.flatMap((c) =>
-    (data.examCategories[c] || []).map((e) => ({ ...e, category: c }))
+    (data.examCategories[c] || [])
+      .filter((e) => (e.gradeLevel || "Freshman") === studentGradeLevel)
+      .map((e) => ({ ...e, category: c }))
   );
   const recentExams = [...allExams]
     .sort((a, b) => String(b.year).localeCompare(String(a.year)))
