@@ -11,7 +11,7 @@ import {
   Image as ImageIcon, UploadCloud, Send, Crown, Paperclip,
   Calculator, Briefcase, Code2, Download, MoreVertical, ChevronDown, ArrowLeft,
   BadgePercent, ArrowUp, ArrowDown, Link2, Menu as MenuIcon, SlidersHorizontal, ChevronUp,
-  Brain, Cpu, ClipboardCheck, HelpCircle,
+  Brain, Cpu, ClipboardCheck, HelpCircle, Microscope,
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
@@ -214,6 +214,83 @@ function subjectCounts(list, subjectId) {
   };
 }
 
+
+/* ----------------------------- Note grades ----------------------------- */
+
+// Inside each subject, notes (chapters) are grouped by grade: Grade 9-12.
+// Notes created before grades existed have no gradeLevel and appear under an
+// extra "Unassigned" card so nothing is lost.
+const NOTE_GRADES = [
+  { id: "9",  label: "Grade 9",  color: "#0B5FE0", tint: "#EAF2FF", Art: Layers },
+  { id: "10", label: "Grade 10", color: "#16A34A", tint: "#E9F9EF", Art: BookOpen },
+  { id: "11", label: "Grade 11", color: "#7C3AED", tint: "#F3EDFF", Art: Atom },
+  { id: "12", label: "Grade 12", color: "#F59E0B", tint: "#FFF6E5", Art: Microscope },
+];
+const UNASSIGNED_GRADE = { id: "__none", label: "Unassigned", color: "#64748B", tint: "#F1F5F9", Art: Layers };
+
+function noteGradeId(n) {
+  const g = String(n?.gradeLevel || "");
+  return NOTE_GRADES.some((x) => x.id === g) ? g : "__none";
+}
+
+function notesForGrade(notes, gradeId) {
+  return (notes || []).filter((n) => noteGradeId(n) === gradeId);
+}
+
+// Grades to show for a subject: always 9-12, plus "Unassigned" only if needed.
+function gradesForNotes(notes) {
+  const list = NOTE_GRADES.map((g) => ({ ...g, count: notesForGrade(notes, g.id).length }));
+  const legacy = notesForGrade(notes, "__none");
+  if (legacy.length) list.push({ ...UNASSIGNED_GRADE, count: legacy.length });
+  return list;
+}
+
+function GradeListCards({ grades, onPick }) {
+  return (
+    <div className="flex flex-col gap-3.5">
+      {grades.map((g) => {
+        const Art = g.Art;
+        return (
+          <button
+            key={g.id}
+            type="button"
+            onClick={() => onPick(g)}
+            className="relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-slate-100 bg-white py-4 pl-5 pr-4 text-left shadow-sm transition hover:shadow-md active:scale-[0.99]"
+            style={{ borderLeft: `5px solid ${g.color}`, background: `linear-gradient(100deg, #fff 45%, ${g.tint} 100%)` }}
+          >
+            <span
+              className="relative inline-flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-white"
+              style={{ background: g.color }}
+            >
+              <GraduationCap size={30} />
+              {g.id !== "__none" && (
+                <span
+                  className="absolute -bottom-0.5 -right-0.5 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-white px-1 text-[11px] font-extrabold"
+                  style={{ color: g.color }}
+                >
+                  {g.id}
+                </span>
+              )}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-lg font-extrabold text-slate-900">{g.label}</span>
+              <span className="block text-sm text-slate-500">
+                {g.count} chapter{g.count === 1 ? "" : "s"} • Notes • Exams
+              </span>
+            </span>
+            <Art size={40} strokeWidth={1.5} className="shrink-0 opacity-60" style={{ color: g.color }} />
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+              style={{ background: `${g.color}22`, color: g.color }}
+            >
+              <ChevronRight size={18} />
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 
 /* ----------------------------- Subscription helpers ----------------------------- */
@@ -2700,6 +2777,7 @@ function applyViewerTheme(html, isDark) {
 function HtmlViewerModal({ url, htmlContent, htmlUrl, title, onClose, theme, brandName, isDark, onToggleDark }) {
 
   const t = theme || getTheme(false);
+  const loadingLogoUrl = useViewerLogoUrl(isDark); // same logo as the top bar, so it's always visible
   const [status, setStatus] = useState(htmlContent ? "loaded" : "loading"); // loading | loaded | failed
   const [resolvedHtml, setResolvedHtml] = useState(htmlContent || "");
   const timeoutRef = useRef(null);
@@ -2777,11 +2855,15 @@ function HtmlViewerModal({ url, htmlContent, htmlUrl, title, onClose, theme, bra
           {status === "loading" && (
             <div className="flex flex-1 flex-col items-center justify-center gap-3">
               <img
-                src={DEFAULT_LOGO_URL}
+                src={loadingLogoUrl}
                 alt="BTR Learning"
-                className="h-16 w-16 animate-pulse rounded-2xl"
+                className="h-20 w-20 animate-pulse rounded-full object-cover"
+                style={{ background: AUTH_BLUE }}
+                onError={(e) => {
+                  if (e.currentTarget.src !== AUTH_LOGO_URL) e.currentTarget.src = AUTH_LOGO_URL;
+                }}
               />
-              <span className="text-xs text-slate-400">Loading material…</span>
+              <span className="text-xs" style={{ color: t.textSecondary }}>Loading material…</span>
             </div>
           )}
           <iframe
@@ -3821,9 +3903,9 @@ function AdminExams({ data, setData, onOpenInApp }) {
 
 /* ----------------------------- ADMIN: Notes ----------------------------- */
 
-function NoteLinkForm({ initial, onSave, onClose, context }) {
+function NoteLinkForm({ initial, onSave, onClose, context, defaultGrade }) {
   const [form, setForm] = useState(
-    initial || { title: "", noteType: NOTE_TYPES[0], link: "", pinned: false, htmlContent: "", htmlUrl: "", fileName: "", isPro: false, subtitle: "", notesCount: "", topicsCount: "", estTime: "", progress: "", topics: [], practiceExams: [] }
+    initial || { title: "", gradeLevel: defaultGrade || "9", noteType: NOTE_TYPES[0], link: "", pinned: false, htmlContent: "", htmlUrl: "", fileName: "", isPro: false, subtitle: "", notesCount: "", topicsCount: "", estTime: "", progress: "", topics: [], practiceExams: [] }
   );
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const topics = form.topics || [];
@@ -3835,6 +3917,14 @@ function NoteLinkForm({ initial, onSave, onClose, context }) {
 
   return (
     <Modal title={initial ? "Edit note" : `Add note — ${context}`} onClose={onClose}>
+      <Field label="Grade">
+        <select className={inputCls} value={noteGradeId(form) === "__none" ? "" : form.gradeLevel} onChange={set("gradeLevel")}>
+          {noteGradeId(form) === "__none" && <option value="" disabled>Select grade…</option>}
+          {NOTE_GRADES.map((g) => (
+            <option key={g.id} value={g.id}>{g.label}</option>
+          ))}
+        </select>
+      </Field>
       <Field label="Title">
         <input className={inputCls} value={form.title} onChange={set("title")} placeholder="e.g. Chapter 1" />
       </Field>
@@ -4138,6 +4228,7 @@ function SubjectForm({ initial, onSave, onClose }) {
 
 function AdminNotes({ data, setData, onOpenInApp }) {
   const [subject, setSubject] = useState(null);
+  const [grade, setGrade] = useState(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -4202,7 +4293,7 @@ function AdminNotes({ data, setData, onOpenInApp }) {
   const addNote = (form) => {
     const list = getList();
     setList(
-      [...list, { ...form, subjectId: subject?.id || null, id: uid("note"), createdAt: new Date().toISOString() }],
+      [...list, { ...form, gradeLevel: form.gradeLevel || (grade && grade.id !== "__none" ? grade.id : "9"), subjectId: subject?.id || null, id: uid("note"), createdAt: new Date().toISOString() }],
       { action: "Added note", detail: form.title }
     );
     setAdding(false);
@@ -4237,7 +4328,7 @@ function AdminNotes({ data, setData, onOpenInApp }) {
           notes={getList()}
           subjects={subjectsList(data)}
           admin
-          onPick={(s) => setSubject(s)}
+          onPick={(s) => { setSubject(s); setGrade(null); }}
           onAdd={() => setAddingSubject(true)}
           onEdit={(s) => setEditingSubject(s)}
           onDelete={(s) => setDeletingSubject(s)}
@@ -4271,8 +4362,29 @@ function AdminNotes({ data, setData, onOpenInApp }) {
     );
   }
 
-  // Level 3: list of notes for this subject
-  const sorted = notesForSubject(getList(), subject.id)
+  // Level 2: grades inside this subject
+  if (!grade) {
+    const subjectNotes = notesForSubject(getList(), subject.id);
+    return (
+      <div>
+        <button
+          onClick={() => setSubject(null)}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
+        >
+          ← Back to subjects
+        </button>
+        <h3 className="mb-1 flex items-center gap-2 text-base font-bold text-slate-800">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: accentColor(subject.name) }} />
+          {subject.name}
+        </h3>
+        <p className="mb-4 text-sm text-slate-500">Select a grade to manage its chapters.</p>
+        <GradeListCards grades={gradesForNotes(subjectNotes)} onPick={(g) => setGrade(g)} />
+      </div>
+    );
+  }
+
+  // Level 3: chapters for this subject + grade
+  const sorted = notesForGrade(notesForSubject(getList(), subject.id), grade.id)
     .slice()
     .sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
@@ -4282,15 +4394,15 @@ function AdminNotes({ data, setData, onOpenInApp }) {
   return (
     <div>
       <button
-        onClick={() => setSubject(null)}
+        onClick={() => setGrade(null)}
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
       >
-        ← Back to subjects
+        ← Back to grades
       </button>
       <div className="mb-5 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-base font-bold text-slate-800">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ background: accentColor(subject.name) }} />
-          {subject.name}
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: grade.color }} />
+          {subject.name} · {grade.label}
         </h3>
         <button
           onClick={() => setAdding(true)}
@@ -4304,7 +4416,7 @@ function AdminNotes({ data, setData, onOpenInApp }) {
       {sorted.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 py-14 text-center">
           <StickyNote size={28} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-sm text-slate-500">No notes yet for this subject.</p>
+          <p className="text-sm text-slate-500">No chapters yet for {grade.label}.</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 gap-3">
@@ -4343,7 +4455,7 @@ function AdminNotes({ data, setData, onOpenInApp }) {
       )}
 
       {adding && (
-        <NoteLinkForm context={subject.name} onSave={addNote} onClose={() => setAdding(false)} />
+        <NoteLinkForm context={`${subject.name} · ${grade.label}`} defaultGrade={grade.id === "__none" ? "9" : grade.id} onSave={addNote} onClose={() => setAdding(false)} />
       )}
       {editing && (
         <NoteLinkForm
@@ -6427,6 +6539,7 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
 
 function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode }) {
   const [subject, setSubject] = useState(null);
+  const [grade, setGrade] = useState(null);
 
   const rows = mergedSubjects(data).map((r) => ({ ...r, count: r.notes.length }));
 
@@ -6451,7 +6564,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
         <div className="pt-3">
           <SubjectListCards
             rows={rows}
-            onPick={(r) => setSubject(r)}
+            onPick={(r) => { setSubject(r); setGrade(null); }}
             emptyLabel="No subjects yet."
             showHeader={false}
           />
@@ -6461,7 +6574,31 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
   }
 
   const current = rows.find((r) => r.id === subject.id) || subject;
-  const sorted = [...(current.notes || [])].sort((a, b) => {
+
+  // Level 2: grades (9-12) inside the chosen subject
+  if (!grade) {
+    return (
+      <div className="relative">
+        <div className="sticky top-0 z-20 -mx-5 px-5 py-3" style={stickyStyle}>
+          {header}
+          <button
+            onClick={() => setSubject(null)}
+            className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
+          >
+            ← Back to subjects
+          </button>
+          <h3 className="mt-1 text-xl font-extrabold text-slate-900">{current.name}</h3>
+          <p className="text-sm text-slate-500">Select your grade to access notes, exams and study materials.</p>
+        </div>
+        <div className="pt-3">
+          <GradeListCards grades={gradesForNotes(current.notes)} onPick={(g) => setGrade(g)} />
+        </div>
+      </div>
+    );
+  }
+
+  // Level 3: chapters for this subject + grade
+  const sorted = notesForGrade(current.notes || [], grade.id).sort((a, b) => {
     if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
@@ -6471,18 +6608,18 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
       <div className="sticky top-0 z-20 -mx-5 px-5 py-3" style={stickyStyle}>
         {header}
         <button
-          onClick={() => setSubject(null)}
+          onClick={() => setGrade(null)}
           className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
         >
-          ← Back to subjects
+          ← Back to grades
         </button>
-        <h3 className="mt-1 text-sm font-bold text-slate-800">{current.name}</h3>
+        <h3 className="mt-1 text-sm font-bold text-slate-800">{current.name} · {grade.label}</h3>
       </div>
 
       <div className="pt-3">
         {sorted.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
-            No notes yet for this subject.
+            No chapters yet for {grade.label}.
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -6494,7 +6631,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
                   chapter={n}
                   locked={locked}
                   onUnlock={onUnlock}
-                  onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: current.name })}
+                  onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: `${current.name} · ${grade.label}` })}
                 />
               );
             })}
@@ -8416,6 +8553,7 @@ class AppErrorBoundary extends React.Component {
 
 function AppInner() {
   const { data, setData, loading, error } = useStore();
+  const loadingLogoUrl = useViewerLogoUrl(false);
   const [session, setSession] = useState(null); // { role: 'admin' } | { role: 'student', student }
   const restoredRef = useRef(false);
 
@@ -8440,9 +8578,13 @@ function AppInner() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
         <img
-          src={DEFAULT_LOGO_URL}
+          src={loadingLogoUrl}
           alt="BTR Learning"
-          className="h-20 w-20 animate-pulse rounded-2xl"
+          className="h-20 w-20 animate-pulse rounded-full object-cover"
+          style={{ background: AUTH_BLUE }}
+          onError={(e) => {
+            if (e.currentTarget.src !== AUTH_LOGO_URL) e.currentTarget.src = AUTH_LOGO_URL;
+          }}
         />
         <span className="text-sm text-slate-400">Loading…</span>
       </div>
