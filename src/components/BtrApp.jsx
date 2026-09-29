@@ -7576,21 +7576,103 @@ function ExpiredGateScreen({ student, theme, darkMode, onLogout, onViewSubscript
   );
 }
 
+/* ---------- PWA install helpers ---------- */
+function detectInstallEnv() {
+  if (typeof navigator === "undefined") return { platform: "other", inApp: false, iosBrowser: "safari", standalone: false };
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+  // Social / messenger in-app browsers can't install web apps
+  const inApp = /FBAN|FBAV|Instagram|Line\/|TikTok|Telegram|Snapchat|MicroMessenger|; wv\)|GSA\//i.test(ua) || (isIOS && !/Safari\//.test(ua));
+  let iosBrowser = "safari";
+  if (/CriOS/.test(ua)) iosBrowser = "chrome";
+  else if (/FxiOS/.test(ua)) iosBrowser = "firefox";
+  else if (/EdgiOS/.test(ua)) iosBrowser = "edge";
+  const standalone = (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  return { platform: isIOS ? "ios" : isAndroid ? "android" : "other", inApp, iosBrowser, standalone };
+}
+
+// Captures Chrome/Edge/Android's native install prompt so we can trigger it from a button.
+let __deferredInstallPrompt = null;
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    __deferredInstallPrompt = e;
+    window.dispatchEvent(new CustomEvent("btr-install-ready"));
+  });
+  window.addEventListener("appinstalled", () => {
+    __deferredInstallPrompt = null;
+    window.dispatchEvent(new CustomEvent("btr-install-ready"));
+  });
+}
+
+function useInstallPrompt() {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const h = () => force((n) => n + 1);
+    window.addEventListener("btr-install-ready", h);
+    return () => window.removeEventListener("btr-install-ready", h);
+  }, []);
+  const env = useMemo(() => detectInstallEnv(), []);
+  const canPromptNatively = !!__deferredInstallPrompt;
+  const promptInstall = async () => {
+    const ev = __deferredInstallPrompt;
+    if (!ev) return false;
+    ev.prompt();
+    try { await ev.userChoice; } catch { /* ignore */ }
+    __deferredInstallPrompt = null;
+    force((n) => n + 1);
+    return true;
+  };
+  return { env, canPromptNatively, promptInstall };
+}
+
 function InstallHelpModal({ theme, onClose }) {
-  const steps = [
-    "Open the BTR Exit Exam link in Google Chrome.",
-    "Wait a few seconds for the Install App notification to appear.",
-    "Tap Install.",
-    "The app will be added to your home screen.",
-    "Open it from your home screen and enjoy a faster experience.",
-  ];
-  const fallbackSteps = [
-    "Tap the ⋮ (three-dot menu) in Chrome.",
-    "Select Install app or Add to Home screen.",
-    "Tap Install.",
-  ];
+  const { env, canPromptNatively, promptInstall } = useInstallPrompt();
+  const [copied, setCopied] = useState(false);
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  let steps;
+  let title = "";
+  if (env.platform === "ios") {
+    title = "iPhone / iPad";
+    steps = env.iosBrowser === "safari"
+      ? [
+          "Tap the Share button (square with an arrow ↑) at the bottom of Safari.",
+          "Scroll down and tap “Add to Home Screen”.",
+          "Tap “Add” in the top-right corner.",
+          "Open BTR from your home screen.",
+        ]
+      : [
+          "Tap the Share button (square with an arrow ↑) next to the address bar, or tap ⋯ then Share.",
+          "Scroll down and tap “Add to Home Screen”. If you don't see it, open this link in Safari instead.",
+          "Tap “Add”, then open BTR from your home screen.",
+        ];
+  } else if (env.platform === "android") {
+    title = "Android";
+    steps = [
+      "Open the BTR link in Google Chrome.",
+      "Tap the ⋮ menu in the top-right corner.",
+      "Tap “Install app” (or “Add to Home screen”).",
+      "Tap Install, then open BTR from your home screen.",
+    ];
+  } else {
+    title = "Computer";
+    steps = [
+      "Open the BTR link in Chrome or Edge.",
+      "Click the install icon at the right end of the address bar (or menu → Install BTR).",
+      "Click Install.",
+    ];
+  }
+
   return (
-    <Modal title="How to Install BTR Exit Exam" onClose={onClose} theme={theme}>
+    <Modal title="Install BTR Exit Exam" onClose={onClose} theme={theme}>
       <div className="space-y-4">
         <div className="flex items-center gap-3 rounded-2xl bg-[#2563EB]/10 p-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-white">
@@ -7601,34 +7683,58 @@ function InstallHelpModal({ theme, onClose }) {
           </p>
         </div>
 
-        <ol className="space-y-3">
-          {steps.map((step, i) => (
-            <li key={i} className="flex items-start gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-bold text-white">
-                {i + 1}
-              </span>
-              <span className="text-sm leading-relaxed" style={{ color: theme.textSecondary }}>
-                {step}
-              </span>
-            </li>
-          ))}
-        </ol>
+        {env.standalone && (
+          <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
+            ✓ BTR is already installed on this device.
+          </p>
+        )}
+
+        {env.inApp && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="font-semibold">You're inside another app's browser (Telegram, Facebook, etc.)</p>
+            <p className="mt-1">
+              Installing doesn't work here. Copy the link and open it in {env.platform === "ios" ? "Safari" : "Chrome"}.
+            </p>
+            <button
+              onClick={copyLink}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white"
+            >
+              <Link2 size={14} /> {copied ? "Link copied!" : "Copy link"}
+            </button>
+          </div>
+        )}
+
+        {canPromptNatively && !env.standalone && (
+          <button
+            onClick={async () => { const ok = await promptInstall(); if (ok) onClose(); }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] py-3 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+          >
+            <Download size={16} /> Install now
+          </button>
+        )}
 
         <div className="rounded-2xl border p-3" style={{ borderColor: theme.cardBorder, background: theme.cardBg }}>
-          <p className="mb-2 flex items-center gap-2 text-sm font-semibold" style={{ color: theme.textPrimary }}>
-            <MoreVertical size={16} />
-            If the install notification doesn't appear:
+          <p className="mb-2 text-sm font-bold" style={{ color: theme.textPrimary }}>
+            {canPromptNatively ? "Or install manually" : "Steps"} · {title}
           </p>
-          <ol className="ml-4 list-decimal space-y-1.5 text-sm" style={{ color: theme.textSecondary }}>
-            {fallbackSteps.map((step, i) => (
-              <li key={i}>{step}</li>
+          <ol className="space-y-3">
+            {steps.map((step, i) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-xs font-bold text-white">
+                  {i + 1}
+                </span>
+                <span className="text-sm leading-relaxed" style={{ color: theme.textSecondary }}>
+                  {step}
+                </span>
+              </li>
             ))}
           </ol>
         </div>
 
         <button
           onClick={onClose}
-          className="w-full rounded-xl bg-[#2563EB] py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d4ed8]"
+          className="w-full rounded-xl py-2.5 text-sm font-semibold transition"
+          style={{ border: `1px solid ${theme.cardBorder}`, color: theme.textSecondary }}
         >
           Got it
         </button>
@@ -8140,6 +8246,23 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-bold text-slate-900">Unlock more with Premium</span>
                     <span className="block text-xs text-slate-500">Upgrade anytime for unlimited access.</span>
+                  </span>
+                  <ChevronRight size={18} className="text-slate-400" />
+                </button>
+              )}
+
+              {/* Install app button (hidden once installed) */}
+              {!detectInstallEnv().standalone && (
+                <button
+                  onClick={() => setShowInstallHelp(true)}
+                  className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-sm"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-white">
+                    <Download size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-slate-900">Install BTR app</span>
+                    <span className="block text-xs text-slate-500">Add to your home screen for quick access.</span>
                   </span>
                   <ChevronRight size={18} className="text-slate-400" />
                 </button>
