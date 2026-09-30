@@ -687,7 +687,7 @@ const STRINGS = {
     welcomeBack: "Welcome back",
     exams: "Exams", notes: "Notes", updates: "Updates",
     announcements: "Announcements", recentExamMaterials: "Recent exam materials",
-    home: "Home", logout: "Logout",
+    home: "Home", plan: "Plan", logout: "Logout",
     noAnnouncements: "No announcements yet.", noExamsTitle: "No exams posted yet.",
     noExamsSub: "Check back later for new materials.",
     profile: "Profile", viewProfile: "View profile", editProfile: "Edit profile",
@@ -704,7 +704,7 @@ const STRINGS = {
     welcomeBack: "Baga deebitan",
     exams: "Qormaata", notes: "Yaadannoo", updates: "Odeeffannoo",
     announcements: "Beeksisa", recentExamMaterials: "Meeshaalee qormaataa haaraa",
-    home: "Mana", logout: "Bahi",
+    home: "Mana", plan: "Karoora", logout: "Bahi",
     noAnnouncements: "Hanga ammaatti beeksisni hin jiru.", noExamsTitle: "Qormaanni hin maxxanfamne.",
     noExamsSub: "Boodarra deebi'ii ilaali.",
     profile: "Piroofaayilii", viewProfile: "Piroofaayilii ilaali", editProfile: "Piroofaayilii gulaali",
@@ -721,7 +721,7 @@ const STRINGS = {
     welcomeBack: "እንኳን ደህና መጡ",
     exams: "ፈተናዎች", notes: "ማስታወሻዎች", updates: "ማሻሻያዎች",
     announcements: "ማስታወቂያዎች", recentExamMaterials: "የቅርብ ጊዜ የፈተና ቁሳቁሶች",
-    home: "ቤት", logout: "ውጣ",
+    home: "ቤት", plan: "እቅድ", logout: "ውጣ",
     noAnnouncements: "እስካሁን ምንም ማስታወቂያ የለም።", noExamsTitle: "እስካሁን ምንም ፈተና አልተለጠፈም።",
     noExamsSub: "ለአዳዲስ ቁሳቁሶች በኋላ ይመልከቱ።",
     profile: "መገለጫ", viewProfile: "መገለጫ ይመልከቱ", editProfile: "መገለጫ ያስተካክሉ",
@@ -950,6 +950,8 @@ function makeDefaultData() {
     students: [],
     exams: [],
     notes: [],
+    studyPlans: [],
+    studyProgress: {},
     announcements: [],
     noteLinks: {},
     subjects: {},
@@ -981,6 +983,8 @@ function normalizeData(parsed) {
   if (!Array.isArray(parsed.subscriptionRequests)) parsed.subscriptionRequests = [];
   if (!parsed.planIcons || typeof parsed.planIcons !== "object") parsed.planIcons = {};
   if (!Array.isArray(parsed.ads)) parsed.ads = [];
+  if (!Array.isArray(parsed.studyPlans)) parsed.studyPlans = [];
+  if (!parsed.studyProgress || typeof parsed.studyProgress !== "object") parsed.studyProgress = {};
   if (!Array.isArray(parsed.announcements)) parsed.announcements = [];
   if (!Array.isArray(parsed.students)) parsed.students = [];
   if (!parsed.noteLinks || typeof parsed.noteLinks !== "object") parsed.noteLinks = {};
@@ -5392,6 +5396,7 @@ function AdminShell({ data, setData, onLogout }) {
     { key: "students", label: "Students", shortLabel: "Students", icon: Users },
     { key: "exams", label: "Exams", shortLabel: "Exams", icon: FileText },
     { key: "notes", label: "Notes", shortLabel: "Notes", icon: StickyNote },
+    { key: "schedule", label: "Study schedule", shortLabel: "Plan", icon: CalendarClock },
     { key: "activity", label: "Activity log", shortLabel: "Activity", icon: Clock },
     { key: "branding", label: "Branding", shortLabel: "Brand", icon: ImageIcon },
   ];
@@ -5498,6 +5503,7 @@ function AdminShell({ data, setData, onLogout }) {
             {tab === "students" && "Add and manage student records."}
             {tab === "exams" && "Schedule exams and attach study material."}
             {tab === "notes" && "Post notes and link out to study resources."}
+            {tab === "schedule" && "Build day-by-day study plans and choose who can access them."}
             {tab === "activity" && "See who added, edited, or removed content, and when."}
             {tab === "branding" && "Change the logo shown on the sign-in page and throughout the app."}
           </p>
@@ -5509,6 +5515,7 @@ function AdminShell({ data, setData, onLogout }) {
           {tab === "students" && <AdminStudents data={data} setData={setData} />}
           {tab === "exams" && <AdminExams data={data} setData={setData} onOpenInApp={openInApp} />}
           {tab === "notes" && <AdminNotes data={data} setData={setData} onOpenInApp={openInApp} />}
+          {tab === "schedule" && <AdminStudyPlans data={data} setData={setData} />}
           {tab === "activity" && <AdminActivityLog data={data} setData={setData} />}
           {tab === "branding" && (
             <div className="space-y-6">
@@ -7883,6 +7890,296 @@ function AnnouncementsModal({ theme, lang, darkMode, announcements, expandedId, 
 }
 
 
+/* ----------------------------- Study schedule (admin + student) ----------------------------- */
+
+const PLAN_GRADES = ["Freshman", "Grade 12"];
+const blankTopic = () => ({ id: uid("tp"), title: "", description: "", link: "", htmlUrl: "", htmlContent: "", fileName: "", examNumbers: "", practiceCount: "", practiceLink: "" });
+const blankDay = () => ({ id: uid("day"), subject: "", subtitle: "", estTime: "", topics: [blankTopic()] });
+const blankPlan = () => ({
+  id: uid("plan"), title: "30-Day Study Plan", subtitle: "Small steps every day. Big results at the end!",
+  published: false, proOnly: false, access: { mode: "all", grades: [], studentIds: [] },
+  days: [blankDay()], createdAt: new Date().toISOString(),
+});
+
+function studentCanSeePlan(plan, student) {
+  if (!plan?.published) return false;
+  const a = plan.access || { mode: "all" };
+  if (a.mode === "grade") return (a.grades || []).includes(isGrade12(student.grade) ? "Grade 12" : "Freshman");
+  if (a.mode === "students") return (a.studentIds || []).includes(student.id);
+  return true;
+}
+function planAudienceLabel(plan, students) {
+  const a = plan.access || { mode: "all" };
+  if (a.mode === "grade") return (a.grades || []).join(" + ") || "No grade selected";
+  if (a.mode === "students") return `${(a.studentIds || []).filter((id) => students.some((s) => s.id === id)).length} selected students`;
+  return "All students";
+}
+const topicHasFile = (tp) => !!(tp.link || tp.htmlUrl || tp.htmlContent);
+const examList = (s) => String(s || "").split(/[,\s]+/).filter(Boolean);
+
+function StudyPlanEditor({ initial, students, onSave, onCancel }) {
+  const [plan, setPlan] = useState(initial);
+  const [q, setQ] = useState("");
+  const set = (k) => (e) => setPlan((p) => ({ ...p, [k]: e.target.value }));
+  const setAccess = (patch) => setPlan((p) => ({ ...p, access: { ...p.access, ...patch } }));
+  const toggle = (key, val) => setAccess({ [key]: (plan.access[key] || []).includes(val) ? plan.access[key].filter((x) => x !== val) : [...(plan.access[key] || []), val] });
+  const setDay = (i, patch) => setPlan((p) => ({ ...p, days: p.days.map((d, x) => (x === i ? { ...d, ...patch } : d)) }));
+  const setTopic = (i, j, patch) => setDay(i, { topics: plan.days[i].topics.map((t, x) => (x === j ? { ...t, ...patch } : t)) });
+  const shown = students.filter((s) => (s.name + s.studentId).toLowerCase().includes(q.toLowerCase()));
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Plan title"><input className={inputCls} value={plan.title} onChange={set("title")} /></Field>
+        <Field label="Subtitle"><input className={inputCls} value={plan.subtitle} onChange={set("subtitle")} /></Field>
+      </div>
+
+      <div className="rounded-xl bg-slate-50 p-3">
+        <div className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800"><ShieldCheck size={16} /> Who can access</div>
+        <div className="flex flex-wrap gap-2">
+          {[["all", "All students"], ["grade", "By grade"], ["students", "Specific students"]].map(([m, l]) => (
+            <button key={m} type="button" onClick={() => setAccess({ mode: m })}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold ${plan.access.mode === m ? "bg-blue-600 text-white" : "bg-white text-slate-600 border border-slate-200"}`}>{l}</button>
+          ))}
+        </div>
+        {plan.access.mode === "grade" && (
+          <div className="mt-3 flex gap-4">
+            {PLAN_GRADES.map((g) => (
+              <label key={g} className="flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" checked={(plan.access.grades || []).includes(g)} onChange={() => toggle("grades", g)} /> {g}
+              </label>
+            ))}
+          </div>
+        )}
+        {plan.access.mode === "students" && (
+          <div className="mt-3">
+            <input className={inputCls} placeholder="Search students…" value={q} onChange={(e) => setQ(e.target.value)} />
+            <div className="mt-2 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white">
+              {shown.length === 0 && <p className="p-3 text-xs text-slate-400">No students found.</p>}
+              {shown.map((s) => (
+                <label key={s.id} className="flex items-center gap-2.5 border-b border-slate-100 px-3 py-2 text-sm text-slate-700 last:border-0">
+                  <input type="checkbox" checked={(plan.access.studentIds || []).includes(s.id)} onChange={() => toggle("studentIds", s.id)} />
+                  <span className="flex-1 truncate">{s.name}</span><span className="text-xs text-slate-400">{s.studentId}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="mt-3 flex flex-wrap gap-5">
+          <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={plan.proOnly} onChange={(e) => setPlan((p) => ({ ...p, proOnly: e.target.checked }))} /> Subscribers only</label>
+          <label className="flex items-center gap-2 text-sm font-semibold text-emerald-700"><input type="checkbox" checked={plan.published} onChange={(e) => setPlan((p) => ({ ...p, published: e.target.checked }))} /> Published (visible to students)</label>
+        </div>
+      </div>
+
+      {plan.days.map((d, i) => (
+        <div key={d.id} className="rounded-xl border border-slate-200 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-extrabold text-blue-700">Day {i + 1}</span>
+            <button type="button" onClick={() => setPlan((p) => ({ ...p, days: p.days.filter((x) => x.id !== d.id) }))} className="text-slate-400 hover:text-rose-500"><Trash2 size={16} /></button>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <input className={inputCls} placeholder="Subject (Mathematics)" value={d.subject} onChange={(e) => setDay(i, { subject: e.target.value })} />
+            <input className={inputCls} placeholder="Focus (Algebra & Functions)" value={d.subtitle} onChange={(e) => setDay(i, { subtitle: e.target.value })} />
+            <input className={inputCls} placeholder="Time (2h 30m)" value={d.estTime} onChange={(e) => setDay(i, { estTime: e.target.value })} />
+          </div>
+          {d.topics.map((tp, j) => (
+            <div key={tp.id} className="mt-3 rounded-xl bg-slate-50 p-3">
+              <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-500">
+                Topic {j + 1}
+                <button type="button" onClick={() => setDay(i, { topics: d.topics.filter((x) => x.id !== tp.id) })} className="hover:text-rose-500"><X size={14} /></button>
+              </div>
+              <input className={`${inputCls} mb-2`} placeholder="Topic title" value={tp.title} onChange={(e) => setTopic(i, j, { title: e.target.value })} />
+              <input className={`${inputCls} mb-2`} placeholder="Short description" value={tp.description} onChange={(e) => setTopic(i, j, { description: e.target.value })} />
+              <input className={`${inputCls} mb-2`} placeholder="Study file link (PDF / Drive)" value={tp.link} disabled={!!(tp.htmlUrl || tp.htmlContent)} onChange={(e) => setTopic(i, j, { link: e.target.value })} />
+              <HtmlUploadField fileName={tp.fileName}
+                onUpload={({ htmlUrl, fileName }) => setTopic(i, j, { htmlUrl, htmlContent: "", fileName, link: "" })}
+                onRemove={() => setTopic(i, j, { htmlUrl: "", htmlContent: "", fileName: "" })} />
+              <div className="grid gap-2 sm:grid-cols-3">
+                <input className={inputCls} placeholder="Exam numbers (1, 2, 5)" value={tp.examNumbers} onChange={(e) => setTopic(i, j, { examNumbers: e.target.value })} />
+                <input className={inputCls} placeholder="Practice questions (5)" inputMode="numeric" value={tp.practiceCount} onChange={(e) => setTopic(i, j, { practiceCount: e.target.value })} />
+                <input className={inputCls} placeholder="Practice link (optional)" value={tp.practiceLink} onChange={(e) => setTopic(i, j, { practiceLink: e.target.value })} />
+              </div>
+            </div>
+          ))}
+          <button type="button" onClick={() => setDay(i, { topics: [...d.topics, blankTopic()] })} className="mt-3 text-sm font-semibold text-sky-700">+ Add topic</button>
+        </div>
+      ))}
+      <button type="button" onClick={() => setPlan((p) => ({ ...p, days: [...p.days, blankDay()] }))}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 text-sm font-semibold text-slate-600"><Plus size={16} /> Add day</button>
+
+      <div className="flex gap-2">
+        <button onClick={onCancel} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-slate-600">Cancel</button>
+        <button onClick={() => plan.title.trim() && onSave(plan)} className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white" style={{ background: "linear-gradient(to right, #0EA5E9, #2563EB)" }}>Save plan</button>
+      </div>
+    </div>
+  );
+}
+
+function AdminStudyPlans({ data, setData }) {
+  const [editing, setEditing] = useState(null);
+  const plans = data.studyPlans || [];
+  const save = (plan) => {
+    const exists = plans.some((p) => p.id === plan.id);
+    setData(withActivity({ ...data, studyPlans: exists ? plans.map((p) => (p.id === plan.id ? plan : p)) : [...plans, plan] }, exists ? "Edited study plan" : "Added study plan", plan.title));
+    setEditing(null);
+  };
+  const remove = (plan) => {
+    if (!window.confirm(`Delete "${plan.title}"?`)) return;
+    setData(withActivity({ ...data, studyPlans: plans.filter((p) => p.id !== plan.id) }, "Deleted study plan", plan.title));
+  };
+  if (editing) return <StudyPlanEditor initial={editing} students={data.students} onSave={save} onCancel={() => setEditing(null)} />;
+  return (
+    <div className="space-y-3">
+      <button onClick={() => setEditing(blankPlan())} className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white"><Plus size={16} /> New study plan</button>
+      {plans.length === 0 && <p className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">No study plans yet.</p>}
+      {plans.map((p) => (
+        <div key={p.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600"><CalendarClock size={20} /></span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-bold text-slate-900">{p.title}</div>
+            <div className="text-xs text-slate-500">{p.days.length} days · {planAudienceLabel(p, data.students)}{p.proOnly ? " · Subscribers" : ""}</div>
+          </div>
+          <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${p.published ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{p.published ? "Live" : "Draft"}</span>
+          <button onClick={() => setEditing(p)} className="text-slate-400 hover:text-sky-600"><Pencil size={16} /></button>
+          <button onClick={() => remove(p)} className="text-slate-400 hover:text-rose-500"><Trash2 size={16} /></button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StudentStudyPlan({ data, setData, student, theme, streak, isSubscribed, onUnlock, onOpenInApp, onGoExams }) {
+  const plans = (data.studyPlans || []).filter((p) => studentCanSeePlan(p, student));
+  const [planId, setPlanId] = useState(null);
+  const [dayIdx, setDayIdx] = useState(0);
+  const [openTopic, setOpenTopic] = useState(null);
+  const plan = plans.find((p) => p.id === planId) || plans[0];
+  const card = { background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary };
+
+  if (!plan) return (
+    <div className="p-6 text-center" style={{ color: theme.textSecondary }}>
+      <CalendarClock size={40} className="mx-auto mb-3" style={{ color: theme.textMuted }} />
+      <p className="text-sm font-semibold">No study plan assigned to you yet.</p>
+      <p className="text-xs">Check back soon.</p>
+    </div>
+  );
+  if (plan.proOnly && !isSubscribed) return (
+    <div className="p-6 text-center">
+      <Lock size={36} className="mx-auto mb-3" style={{ color: theme.textMuted }} />
+      <p className="text-sm font-bold" style={{ color: theme.textPrimary }}>{plan.title} is for subscribers</p>
+      <button onClick={onUnlock} className="mt-4 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white">Unlock</button>
+    </div>
+  );
+
+  const prog = data.studyProgress?.[student.id]?.[plan.id] || { doneTopics: [] };
+  const done = new Set(prog.doneTopics);
+  const dayDone = (d) => d.topics.length > 0 && d.topics.every((t) => done.has(t.id));
+  const daysDone = plan.days.filter(dayDone).length;
+  const pct = plan.days.length ? Math.round((daysDone / plan.days.length) * 100) : 0;
+  const allTopics = plan.days.reduce((n, d) => n + d.topics.length, 0);
+  const xpGoal = allTopics * 10 + plan.days.length * 50;
+  const xp = done.size * 10 + daysDone * 50;
+  const day = plan.days[Math.min(dayIdx, plan.days.length - 1)];
+
+  const setDone = (ids, on) => {
+    const next = on ? [...new Set([...prog.doneTopics, ...ids])] : prog.doneTopics.filter((x) => !ids.includes(x));
+    setData({ ...data, studyProgress: { ...(data.studyProgress || {}), [student.id]: { ...(data.studyProgress?.[student.id] || {}), [plan.id]: { doneTopics: next } } } });
+  };
+  const open = (tp, forceInApp) => {
+    if (tp.htmlUrl || tp.htmlContent) return onOpenInApp({ htmlContent: tp.htmlContent, htmlUrl: tp.htmlUrl }, tp.title, { type: "note" });
+    if (!forceInApp) return window.open(normalizeUrl(tp.link), "_blank", "noopener");
+    onOpenInApp(toEmbeddableUrl(normalizeUrl(tp.link)), tp.title, { type: "note" });
+  };
+  const R = 26, C = 2 * Math.PI * R;
+
+  return (
+    <div className="space-y-3 p-4 pb-24">
+      <div className="flex items-center gap-3 rounded-2xl border p-4" style={card}>
+        <div className="relative h-16 w-16 shrink-0">
+          <svg viewBox="0 0 64 64" className="h-16 w-16 -rotate-90">
+            <circle cx="32" cy="32" r={R} fill="none" stroke={theme.cardBorder} strokeWidth="6" />
+            <circle cx="32" cy="32" r={R} fill="none" stroke="#22C55E" strokeWidth="6" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct / 100)} />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center text-sm font-extrabold">{pct}%</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-base font-extrabold">{plan.title}</div>
+          <div className="text-xs" style={{ color: theme.textSecondary }}>{daysDone}/{plan.days.length} days completed</div>
+          <div className="mt-1 flex gap-3 text-xs font-bold"><span className="flex items-center gap-1 text-orange-500"><Flame size={14} />{streak?.streak || 0} day</span><span className="flex items-center gap-1 text-amber-500"><Sparkles size={14} />{xp} / {xpGoal} XP</span></div>
+        </div>
+      </div>
+      {plans.length > 1 && (
+        <select className={inputCls} value={plan.id} onChange={(e) => { setPlanId(e.target.value); setDayIdx(0); }}>{plans.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</select>
+      )}
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {plan.days.map((d, i) => (
+          <button key={d.id} onClick={() => { setDayIdx(i); setOpenTopic(null); }}
+            className={`shrink-0 rounded-xl border px-4 py-2 text-left ${i === dayIdx ? "bg-blue-600 border-blue-600 text-white" : ""}`} style={i === dayIdx ? undefined : card}>
+            <div className="flex items-center gap-1 text-sm font-bold">{dayDone(d) && <CheckCircle2 size={14} />}Day {i + 1}</div>
+            <div className="text-[11px] opacity-80">{d.subject || "—"}</div>
+          </button>
+        ))}
+      </div>
+
+      {day && (
+        <div className="rounded-2xl border p-4" style={card}>
+          <div className="flex items-start justify-between gap-2">
+            <div><div className="text-lg font-extrabold">Day {dayIdx + 1}{day.subject && ` — ${day.subject}`}</div><div className="text-sm" style={{ color: theme.textSecondary }}>{day.subtitle}</div></div>
+            {day.estTime && <span className="flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold text-blue-600" style={{ borderColor: theme.cardBorder }}><Clock size={12} />{day.estTime}</span>}
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+            {[[day.topics.length, "Topics"], [day.topics.filter(topicHasFile).length, "Files"], [day.topics.reduce((n, t) => n + (parseInt(t.practiceCount) || 0), 0), "Questions"]].map(([v, l]) => (
+              <div key={l} className="rounded-xl p-2" style={{ background: theme.chipBg }}><div className="text-base font-extrabold">{v}</div><div style={{ color: theme.textSecondary }}>{l}</div></div>
+            ))}
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {day.topics.map((tp, i) => {
+              const isOpen = openTopic === tp.id;
+              return (
+                <div key={tp.id} className="rounded-xl border" style={{ borderColor: theme.cardBorder }}>
+                  <div className="flex items-center gap-3 p-3">
+                    <button onClick={() => setDone([tp.id], !done.has(tp.id))} aria-label="Mark done"
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${done.has(tp.id) ? "bg-emerald-500 text-white" : "bg-blue-600 text-white"}`}>
+                      {done.has(tp.id) ? <Check size={16} /> : i + 1}
+                    </button>
+                    <button className="min-w-0 flex-1 text-left" onClick={() => setOpenTopic(isOpen ? null : tp.id)}>
+                      <div className="truncate text-sm font-bold">{tp.title || `Topic ${i + 1}`}</div>
+                      <div className="truncate text-xs" style={{ color: theme.textSecondary }}>{tp.description}</div>
+                    </button>
+                    <ChevronDown size={18} className={isOpen ? "rotate-180" : ""} style={{ color: theme.textMuted }} />
+                  </div>
+                  {isOpen && (
+                    <div className="grid gap-2 border-t p-3" style={{ borderColor: theme.cardBorder }}>
+                      {topicHasFile(tp) && (
+                        <div className="flex items-center gap-3 rounded-xl border p-2.5" style={{ borderColor: theme.cardBorder }}>
+                          <FileText size={22} className="text-rose-500" /><span className="min-w-0 flex-1 truncate text-sm font-semibold">{tp.fileName || tp.title}</span>
+                          <button onClick={() => open(tp)} className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white"><Download size={14} />{tp.htmlUrl || tp.htmlContent ? "Open" : "Download"}</button>
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button disabled={!tp.practiceCount && !tp.practiceLink} onClick={() => tp.practiceLink && onOpenInApp(toEmbeddableUrl(normalizeUrl(tp.practiceLink)), `${tp.title} practice`, { type: "exam" })}
+                          className="rounded-xl bg-emerald-50 p-2.5 text-left text-xs font-bold text-emerald-700 disabled:opacity-50">Practice Questions<div className="text-sm">{tp.practiceCount || 0} questions</div></button>
+                        <button onClick={onGoExams} className="rounded-xl bg-rose-50 p-2.5 text-left text-xs font-bold text-rose-600">Exam Numbers<div className="text-sm">{examList(tp.examNumbers).join(", ") || "—"}</div></button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <button onClick={() => setDone(day.topics.map((t) => t.id), !dayDone(day))}
+            className={`mt-4 flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-bold text-white ${dayDone(day) ? "bg-emerald-500" : "bg-blue-600"}`}>
+            {dayDone(day) ? <><CheckCircle2 size={16} /> Day {dayIdx + 1} completed</> : <>Mark Day {dayIdx + 1} complete</>}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
   const [tab, setTab] = useState("home"); // home | exams | notes
   const [showProfile, setShowProfile] = useState(false);
@@ -8323,6 +8620,22 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
             </section>
           )}
 
+          {tab === "plan" && (
+            <section className="btr-fade-in">
+              <StudentStudyPlan
+                data={data}
+                setData={setData}
+                student={student}
+                theme={theme}
+                streak={streakInfo}
+                isSubscribed={subscription.hasPlan && !subscription.isExpired}
+                onUnlock={openSubscribeFlow}
+                onOpenInApp={trackAndOpen}
+                onGoExams={() => setTab("exams")}
+              />
+            </section>
+          )}
+
           {tab === "notes" && (
             <section className="btr-fade-in">
               <StudentNoteBrowser
@@ -8356,7 +8669,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           className={`fixed inset-x-0 bottom-0 z-10 border-t${darkMode ? "" : " backdrop-blur-md"}`}
           style={{ borderColor: theme.cardBorder, background: theme.navBg }}
         >
-          <div className="mx-auto grid max-w-3xl grid-cols-4">
+          <div className="mx-auto grid max-w-3xl grid-cols-5">
             <button
               onClick={() => setTab("home")}
               className="flex flex-col items-center gap-1 py-3 text-xs font-semibold transition-colors"
@@ -8380,6 +8693,14 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
             >
               <BookOpen size={20} />
               {t(lang, "notes")}
+            </button>
+            <button
+              onClick={() => setTab("plan")}
+              className="flex flex-col items-center gap-1 py-3 text-xs font-semibold transition-colors"
+              style={{ color: tab === "plan" ? "#2563EB" : theme.textMuted }}
+            >
+              <Calendar size={20} />
+              {t(lang, "plan")}
             </button>
             <button
               onClick={onLogout}
