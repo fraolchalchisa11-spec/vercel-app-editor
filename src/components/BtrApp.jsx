@@ -3548,7 +3548,7 @@ function currentEthiopianYearGuess() {
 // 1.5MB per file keeps total localStorage usage (shared across all materials) reasonable.
 const MAX_HTML_UPLOAD_BYTES = 1.5 * 1024 * 1024;
 
-function HtmlUploadField({ fileName, onUpload, onRemove }) {
+function HtmlUploadField({ fileName, onUpload, onRemove, label = "Or upload an HTML file" }) {
   const [err, setErr] = useState("");
   const [uploading, setUploading] = useState(false);
 
@@ -3577,7 +3577,7 @@ function HtmlUploadField({ fileName, onUpload, onRemove }) {
   };
 
   return (
-    <Field label="Or upload an HTML file">
+    <Field label={label}>
       {fileName ? (
         <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
           <span className="truncate text-sm text-slate-700">{fileName}</span>
@@ -7893,7 +7893,7 @@ function AnnouncementsModal({ theme, lang, darkMode, announcements, expandedId, 
 /* ----------------------------- Study schedule (admin + student) ----------------------------- */
 
 const PLAN_GRADES = ["Freshman", "Grade 12"];
-const blankTopic = () => ({ id: uid("tp"), title: "", description: "", link: "", htmlUrl: "", htmlContent: "", fileName: "", examNumbers: "", practiceCount: "", practiceLink: "" });
+const blankTopic = () => ({ id: uid("tp"), title: "", description: "", link: "", htmlUrl: "", htmlContent: "", fileName: "", noteName: "", practiceName: "", practiceCount: "", practiceLink: "", practiceHtmlUrl: "", practiceFileName: "" });
 const blankDay = () => ({ id: uid("day"), subject: "", subtitle: "", estTime: "", topics: [blankTopic()] });
 const blankPlan = () => ({
   id: uid("plan"), title: "30-Day Study Plan", subtitle: "Small steps every day. Big results at the end!",
@@ -7915,7 +7915,9 @@ function planAudienceLabel(plan, students) {
   return "All students";
 }
 const topicHasFile = (tp) => !!(tp.link || tp.htmlUrl || tp.htmlContent);
-const examList = (s) => String(s || "").split(/[,\s]+/).filter(Boolean);
+const topicHasPractice = (tp) => !!(tp.practiceLink || tp.practiceHtmlUrl || parseInt(tp.practiceCount));
+const noteLabel = (tp) => tp.noteName || tp.fileName || tp.title || "Study note";
+const practiceLabel = (tp) => tp.practiceName || tp.title || "Practice";
 
 function StudyPlanEditor({ initial, students, onSave, onCancel }) {
   const [plan, setPlan] = useState(initial);
@@ -7990,14 +7992,24 @@ function StudyPlanEditor({ initial, students, onSave, onCancel }) {
               </div>
               <input className={`${inputCls} mb-2`} placeholder="Topic title" value={tp.title} onChange={(e) => setTopic(i, j, { title: e.target.value })} />
               <input className={`${inputCls} mb-2`} placeholder="Short description" value={tp.description} onChange={(e) => setTopic(i, j, { description: e.target.value })} />
-              <input className={`${inputCls} mb-2`} placeholder="Study file link (PDF / Drive)" value={tp.link} disabled={!!(tp.htmlUrl || tp.htmlContent)} onChange={(e) => setTopic(i, j, { link: e.target.value })} />
-              <HtmlUploadField fileName={tp.fileName}
-                onUpload={({ htmlUrl, fileName }) => setTopic(i, j, { htmlUrl, htmlContent: "", fileName, link: "" })}
-                onRemove={() => setTopic(i, j, { htmlUrl: "", htmlContent: "", fileName: "" })} />
-              <div className="grid gap-2 sm:grid-cols-3">
-                <input className={inputCls} placeholder="Exam numbers (1, 2, 5)" value={tp.examNumbers} onChange={(e) => setTopic(i, j, { examNumbers: e.target.value })} />
-                <input className={inputCls} placeholder="Practice questions (5)" inputMode="numeric" value={tp.practiceCount} onChange={(e) => setTopic(i, j, { practiceCount: e.target.value })} />
-                <input className={inputCls} placeholder="Practice link (optional)" value={tp.practiceLink} onChange={(e) => setTopic(i, j, { practiceLink: e.target.value })} />
+              <div className="mb-2 rounded-xl border border-slate-200 bg-white p-2.5">
+                <div className="mb-2 text-xs font-bold text-slate-600">Note</div>
+                <input className={`${inputCls} mb-2`} placeholder="Note name (e.g. Linear Equations Summary)" value={tp.noteName || ""} onChange={(e) => setTopic(i, j, { noteName: e.target.value })} />
+                <input className={`${inputCls} mb-2`} placeholder="Note link (PDF / Drive)" value={tp.link || ""} disabled={!!(tp.htmlUrl || tp.htmlContent)} onChange={(e) => setTopic(i, j, { link: e.target.value })} />
+                <HtmlUploadField fileName={tp.fileName}
+                  onUpload={({ htmlUrl, fileName }) => setTopic(i, j, { htmlUrl, htmlContent: "", fileName, link: "" })}
+                  onRemove={() => setTopic(i, j, { htmlUrl: "", htmlContent: "", fileName: "" })} />
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-2.5">
+                <div className="mb-2 text-xs font-bold text-slate-600">Practice questions</div>
+                <div className="mb-2 grid gap-2 sm:grid-cols-2">
+                  <input className={inputCls} placeholder="Practice name (e.g. Linear Equations Quiz)" value={tp.practiceName || ""} onChange={(e) => setTopic(i, j, { practiceName: e.target.value })} />
+                  <input className={inputCls} placeholder="Number of questions (5)" inputMode="numeric" value={tp.practiceCount || ""} onChange={(e) => setTopic(i, j, { practiceCount: e.target.value })} />
+                </div>
+                <input className={`${inputCls} mb-2`} placeholder="Practice link (optional)" value={tp.practiceLink || ""} disabled={!!tp.practiceHtmlUrl} onChange={(e) => setTopic(i, j, { practiceLink: e.target.value })} />
+                <HtmlUploadField label="Or upload practice questions (HTML)" fileName={tp.practiceFileName}
+                  onUpload={({ htmlUrl, fileName }) => setTopic(i, j, { practiceHtmlUrl: htmlUrl, practiceFileName: fileName, practiceLink: "" })}
+                  onRemove={() => setTopic(i, j, { practiceHtmlUrl: "", practiceFileName: "" })} />
               </div>
             </div>
           ))}
@@ -8048,7 +8060,7 @@ function AdminStudyPlans({ data, setData }) {
   );
 }
 
-function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isSubscribed, onUnlock, onOpenInApp, onGoExams, logoUrl, notifCount, onSearch, onNotifications, onSettings, onProfile }) {
+function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isSubscribed, onUnlock, onOpenInApp, logoUrl, notifCount, onSearch, onNotifications, onSettings, onProfile }) {
   const plans = (data.studyPlans || []).filter((p) => studentCanSeePlan(p, student));
   const [planId, setPlanId] = useState(null);
   const [dayIdx, setDayIdx] = useState(0);
@@ -8112,64 +8124,59 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
     setData({ ...data, studyProgress: { ...(data.studyProgress || {}), [student.id]: { ...(data.studyProgress?.[student.id] || {}), [plan.id]: { doneTopics: next } } } });
   };
   const openFile = (tp) => {
-    if (tp.htmlUrl || tp.htmlContent) return onOpenInApp({ htmlContent: tp.htmlContent, htmlUrl: tp.htmlUrl }, tp.title, { type: "note" });
+    if (tp.htmlUrl || tp.htmlContent) return onOpenInApp({ htmlContent: tp.htmlContent, htmlUrl: tp.htmlUrl }, noteLabel(tp), { type: "note" });
     window.open(normalizeUrl(tp.link), "_blank", "noopener");
+  };
+  const openPractice = (tp) => {
+    if (tp.practiceHtmlUrl) return onOpenInApp({ htmlUrl: tp.practiceHtmlUrl }, practiceLabel(tp), { type: "exam" });
+    if (tp.practiceLink) onOpenInApp(toEmbeddableUrl(normalizeUrl(tp.practiceLink)), practiceLabel(tp), { type: "exam" });
   };
   const R = 36, C = 2 * Math.PI * R;
 
   let rows = [];
   if (day) {
     const files = day.topics.filter(topicHasFile);
+    const practices = day.topics.filter(topicHasPractice);
     const nQ = day.topics.reduce((n, t) => n + (parseInt(t.practiceCount) || 0), 0);
-    const examNums = [...new Set(day.topics.flatMap((t) => examList(t.examNumbers)))];
     const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
     rows = [
       { key: "topics", icon: FileText, tint: "#E4ECFD", color: "#2563EB",
         title: day.topics.length === 1 ? `Topic: ${day.topics[0].title || "Topic 1"}` : `Topics: ${day.topics.length} today`,
-        sub: `${plural(day.topics.length, "topic")} • ${plural(files.length, "file")} • ${plural(nQ, "question")}` },
+        sub: `${plural(day.topics.length, "topic")} • ${plural(files.length, "note")} • ${plural(nQ, "question")}` },
       { key: "files", icon: FileText, tint: "#FDE7EC", color: "#E11D48",
-        title: files.length === 1 ? `File: ${files[0].fileName || files[0].title || "Study file"}` : `Files: ${plural(files.length, "file")}`,
-        sub: files.length ? "Tap to open" : "No file attached" },
-      { key: "practice", icon: BookOpen, tint: "#DDF7E8", color: "#16A34A", title: "Practice Questions", sub: plural(nQ, "question") },
-      { key: "exams", icon: ClipboardCheck, tint: "#EDE7FF", color: "#7C3AED", title: "Exam Numbers", sub: examNums.join(", ") || "—" },
+        title: files.length === 1 ? `Note: ${noteLabel(files[0])}` : `Notes: ${files.length}`,
+        sub: files.length ? "Tap to open" : "No note attached" },
+      { key: "practice", icon: BookOpen, tint: "#DDF7E8", color: "#16A34A",
+        title: practices.length === 1 ? `Practice: ${practiceLabel(practices[0])}` : "Practice Questions",
+        sub: plural(nQ, "question") },
     ];
   }
   const rowBody = (key) => {
-    const line = "flex items-center gap-3 rounded-xl border p-2.5";
-    const btn = "shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white";
+    const line = "flex items-center gap-3 rounded-lg border p-2";
+    const btn = "shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white";
     if (key === "topics") return day.topics.map((tp, i) => (
       <div key={tp.id} className={line} style={{ borderColor: theme.cardBorder }}>
         <button onClick={() => setDone([tp.id], !done.has(tp.id))} aria-label="Mark done"
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${done.has(tp.id) ? "bg-emerald-500" : "bg-blue-600"}`}>
-          {done.has(tp.id) ? <Check size={16} /> : i + 1}
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${done.has(tp.id) ? "bg-emerald-500" : "bg-blue-600"}`}>
+          {done.has(tp.id) ? <Check size={14} /> : i + 1}
         </button>
         <div className="min-w-0 flex-1"><div className="text-sm font-bold">{tp.title || `Topic ${i + 1}`}</div>{tp.description && <div className="text-xs" style={{ color: theme.textSecondary }}>{tp.description}</div>}</div>
       </div>
     ));
     if (key === "files") return day.topics.filter(topicHasFile).map((tp) => (
       <div key={tp.id} className={line} style={{ borderColor: theme.cardBorder }}>
-        <FileText size={22} className="shrink-0 text-rose-500" />
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{tp.fileName || tp.title}</span>
+        <FileText size={18} className="shrink-0 text-rose-500" />
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{noteLabel(tp)}</span>
         <button onClick={() => openFile(tp)} className={btn}>{tp.htmlUrl || tp.htmlContent ? "Open" : "Download"}</button>
       </div>
     ));
-    if (key === "practice") return day.topics.filter((tp) => tp.practiceCount || tp.practiceLink).map((tp) => (
+    return day.topics.filter(topicHasPractice).map((tp) => (
       <div key={tp.id} className={line} style={{ borderColor: theme.cardBorder }}>
-        <div className="min-w-0 flex-1"><div className="truncate text-sm font-bold">{tp.title}</div><div className="text-xs" style={{ color: theme.textSecondary }}>{tp.practiceCount || 0} questions</div></div>
-        {tp.practiceLink && <button onClick={() => onOpenInApp(toEmbeddableUrl(normalizeUrl(tp.practiceLink)), `${tp.title} practice`, { type: "exam" })} className={btn}>Start</button>}
+        <BookOpen size={18} className="shrink-0 text-emerald-600" />
+        <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold">{practiceLabel(tp)}</div><div className="text-xs" style={{ color: theme.textSecondary }}>{parseInt(tp.practiceCount) || 0} questions</div></div>
+        {(tp.practiceLink || tp.practiceHtmlUrl) && <button onClick={() => openPractice(tp)} className={btn}>Start</button>}
       </div>
     ));
-    return (
-      <>
-        {day.topics.filter((tp) => examList(tp.examNumbers).length).map((tp) => (
-          <div key={tp.id} className={line} style={{ borderColor: theme.cardBorder }}>
-            <div className="min-w-0 flex-1 truncate text-sm font-bold">{tp.title}</div>
-            <div className="flex flex-wrap justify-end gap-1">{examList(tp.examNumbers).map((n) => <span key={n} className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-700">{n}</span>)}</div>
-          </div>
-        ))}
-        <button onClick={onGoExams} className={`${btn} w-full py-2.5`}>Go to Exams</button>
-      </>
-    );
   };
 
   return (
@@ -8203,47 +8210,47 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
         <select className={`${inputCls} mt-3`} value={plan.id} onChange={(e) => { setPlanId(e.target.value); setDayIdx(0); setOpenRow(null); }}>{plans.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</select>
       )}
 
-      <div className="-mx-5 mt-4 flex gap-2.5 overflow-x-auto px-5 pb-1">
+      <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1">
         {plan.days.map((d, i) => {
           const active = i === dayIdx;
           return (
             <button key={d.id} onClick={() => { setDayIdx(i); setOpenRow(null); }}
-              className={`flex min-w-[124px] shrink-0 items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left ${active ? "border-blue-600 text-white shadow-md" : ""}`}
+              className={`flex min-w-[104px] shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left ${active ? "border-blue-600 text-white shadow-md" : ""}`}
               style={active ? { background: "linear-gradient(135deg,#3B82F6,#2563EB)" } : card}>
-              {dayDone(d) ? <CheckCircle2 size={24} className="shrink-0" /> : <Calendar size={24} className="shrink-0" />}
-              <span className="min-w-0 leading-tight"><span className="block text-base font-bold">Day {i + 1}</span><span className={`block truncate text-xs ${active ? "opacity-90" : ""}`} style={active ? undefined : { color: theme.textSecondary }}>{d.subject || "—"}</span></span>
+              {dayDone(d) ? <CheckCircle2 size={18} className="shrink-0" /> : <Calendar size={18} className="shrink-0" />}
+              <span className="min-w-0 leading-tight"><span className="block text-sm font-bold">Day {i + 1}</span><span className={`block truncate text-[11px] ${active ? "opacity-90" : ""}`} style={active ? undefined : { color: theme.textSecondary }}>{d.subject || "—"}</span></span>
             </button>
           );
         })}
       </div>
 
       {day && (
-        <div className="mt-4 rounded-3xl border p-4 shadow-sm" style={card}>
-          <div className="flex items-center gap-3">
-            <span className="shrink-0 rounded-xl bg-blue-600 px-4 py-2.5 text-lg font-extrabold text-white">Day {dayIdx + 1}</span>
-            <div className="min-w-0 flex-1 leading-tight"><div className="truncate text-xl font-extrabold">{day.subject || "Study day"}</div><div className="truncate text-sm" style={{ color: theme.textSecondary }}>{day.subtitle}</div></div>
-            {day.estTime && <span className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-extrabold text-blue-600" style={{ background: darkMode ? theme.chipBg : "#EAF2FF" }}><Clock size={16} />{day.estTime}</span>}
+        <div className="mt-3 rounded-2xl border p-3 shadow-sm" style={card}>
+          <div className="flex items-center gap-2.5">
+            <span className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-extrabold text-white">Day {dayIdx + 1}</span>
+            <div className="min-w-0 flex-1 leading-tight"><div className="truncate text-base font-extrabold">{day.subject || "Study day"}</div><div className="truncate text-xs" style={{ color: theme.textSecondary }}>{day.subtitle}</div></div>
+            {day.estTime && <span className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-extrabold text-blue-600" style={{ background: darkMode ? theme.chipBg : "#EAF2FF" }}><Clock size={13} />{day.estTime}</span>}
           </div>
 
-          <div className="mt-4 space-y-2.5">
+          <div className="mt-3 space-y-2">
             {rows.map((r) => {
               const isOpen = openRow === r.key;
               return (
-                <div key={r.key} className="rounded-2xl border" style={{ borderColor: theme.cardBorder }}>
-                  <button onClick={() => setOpenRow(isOpen ? null : r.key)} className="flex w-full items-center gap-3 p-3 text-left">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: r.tint, color: r.color }}><r.icon size={21} /></span>
-                    <span className="min-w-0 flex-1 leading-snug"><span className="block truncate text-[15px] font-bold">{r.title}</span><span className="block truncate text-sm" style={{ color: theme.textSecondary }}>{r.sub}</span></span>
-                    <ChevronDown size={20} className={`shrink-0 transition ${isOpen ? "rotate-180" : ""}`} style={{ color: theme.textSecondary }} />
+                <div key={r.key} className="rounded-xl border" style={{ borderColor: theme.cardBorder }}>
+                  <button onClick={() => setOpenRow(isOpen ? null : r.key)} className="flex w-full items-center gap-2.5 p-2.5 text-left">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ background: r.tint, color: r.color }}><r.icon size={17} /></span>
+                    <span className="min-w-0 flex-1 leading-snug"><span className="block truncate text-sm font-bold">{r.title}</span><span className="block truncate text-xs" style={{ color: theme.textSecondary }}>{r.sub}</span></span>
+                    <ChevronDown size={17} className={`shrink-0 transition ${isOpen ? "rotate-180" : ""}`} style={{ color: theme.textSecondary }} />
                   </button>
-                  {isOpen && <div className="space-y-2 border-t p-3" style={{ borderColor: theme.cardBorder }}>{rowBody(r.key)}</div>}
+                  {isOpen && <div className="space-y-1.5 border-t p-2.5" style={{ borderColor: theme.cardBorder }}>{rowBody(r.key)}</div>}
                 </div>
               );
             })}
           </div>
 
           <button onClick={() => setDone(day.topics.map((t) => t.id), !dayDone(day))}
-            className={`mt-4 flex w-full items-center justify-center gap-2.5 rounded-2xl py-3.5 text-base font-bold text-white ${dayDone(day) ? "bg-emerald-500" : "bg-blue-600"}`}>
-            <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white">{dayDone(day) ? <Check size={15} /> : <ArrowRight size={15} />}</span>
+            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white ${dayDone(day) ? "bg-emerald-500" : "bg-blue-600"}`}>
+            <span className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white">{dayDone(day) ? <Check size={11} /> : <ArrowRight size={11} />}</span>
             {dayDone(day) ? `Day ${dayIdx + 1} Completed` : `Mark Day ${dayIdx + 1} Complete`}
           </button>
         </div>
@@ -8712,7 +8719,6 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                 isSubscribed={subscription.hasPlan && !subscription.isExpired}
                 onUnlock={openSubscribeFlow}
                 onOpenInApp={trackAndOpen}
-                onGoExams={() => setTab("exams")}
               />
             </section>
           )}
