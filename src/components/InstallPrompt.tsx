@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Download, X, Share } from "lucide-react";
-import btrLogoAsset from "@/assets/btr-logo.png.asset.json";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -62,7 +61,11 @@ export default function InstallPrompt() {
     <div className="fixed inset-x-0 bottom-0 z-[9999] flex justify-center p-3 sm:p-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl">
         <div className="flex items-center gap-3">
-          <img src={btrLogoAsset.url} alt="BTR Learning" className="h-11 w-11 rounded-xl" />
+          <img
+            src="/icon-192.png"
+            alt="BTR Learning"
+            className="h-11 w-11 shrink-0 rounded-xl object-contain"
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-slate-900">Install BTR Learning</p>
             <p className="truncate text-xs text-slate-500">
