@@ -8065,6 +8065,7 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
   const [planId, setPlanId] = useState(null);
   const [dayIdx, setDayIdx] = useState(0);
   const [openRow, setOpenRow] = useState(null);
+  const [planOpen, setPlanOpen] = useState(false);
   const plan = plans.find((p) => p.id === planId) || plans[0];
   const card = { background: theme.cardBg, borderColor: theme.cardBorder, color: theme.textPrimary };
   const iconBtn = "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full";
@@ -8143,10 +8144,10 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
       { key: "topics", icon: FileText, tint: "#E4ECFD", color: "#2563EB",
         title: day.topics.length === 1 ? `Topic: ${day.topics[0].title || "Topic 1"}` : `Topics: ${day.topics.length} today`,
         sub: `${plural(day.topics.length, "topic")} • ${plural(files.length, "note")} • ${plural(nQ, "question")}` },
-      { key: "files", icon: FileText, tint: "#FDE7EC", color: "#E11D48",
+      { key: "files", icon: FileText, tint: "#E4ECFD", color: "#2563EB",
         title: files.length === 1 ? `Note: ${noteLabel(files[0])}` : `Notes: ${files.length}`,
         sub: files.length ? "Tap to open" : "No note attached" },
-      { key: "practice", icon: BookOpen, tint: "#DDF7E8", color: "#16A34A",
+      { key: "practice", icon: BookOpen, tint: "#E4ECFD", color: "#2563EB",
         title: practices.length === 1 ? `Practice: ${practiceLabel(practices[0])}` : "Practice Questions",
         sub: plural(nQ, "question") },
     ];
@@ -8165,14 +8166,14 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
     ));
     if (key === "files") return day.topics.filter(topicHasFile).map((tp) => (
       <div key={tp.id} className={line} style={{ borderColor: theme.cardBorder }}>
-        <FileText size={18} className="shrink-0 text-rose-500" />
+        <FileText size={18} className="shrink-0 text-blue-600" />
         <span className="min-w-0 flex-1 truncate text-sm font-semibold">{noteLabel(tp)}</span>
         <button onClick={() => openFile(tp)} className={btn}>{tp.htmlUrl || tp.htmlContent ? "Open" : "Download"}</button>
       </div>
     ));
     return day.topics.filter(topicHasPractice).map((tp) => (
       <div key={tp.id} className={line} style={{ borderColor: theme.cardBorder }}>
-        <BookOpen size={18} className="shrink-0 text-emerald-600" />
+        <BookOpen size={18} className="shrink-0 text-blue-600" />
         <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold">{practiceLabel(tp)}</div><div className="text-xs" style={{ color: theme.textSecondary }}>{parseInt(tp.practiceCount) || 0} questions</div></div>
         {(tp.practiceLink || tp.practiceHtmlUrl) && <button onClick={() => openPractice(tp)} className={btn}>Start</button>}
       </div>
@@ -8183,7 +8184,9 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
     <div>
       {header}
       <div className="rounded-3xl border p-4 shadow-sm" style={card}>
-        <div className="flex items-center gap-3">
+        <div role="button" tabIndex={0} aria-expanded={planOpen} onClick={() => setPlanOpen((o) => !o)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPlanOpen((o) => !o); } }}
+          className="flex cursor-pointer items-center gap-3">
           <div className="relative h-[84px] w-[84px] shrink-0">
             <svg viewBox="0 0 84 84" className="h-full w-full -rotate-90">
               <circle cx="42" cy="42" r={R} fill="none" stroke={darkMode ? theme.cardBorder : "#E2E8F0"} strokeWidth="8" />
@@ -8195,6 +8198,7 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
             <div className="flex items-start gap-1.5"><CalendarClock size={20} className="mt-0.5 shrink-0 text-blue-600" /><span className="text-base font-extrabold leading-tight">{plan.title}</span></div>
             <div className="mt-1 text-xs" style={{ color: theme.textSecondary }}>{daysDone}/{plan.days.length} days completed</div>
           </div>
+          <ChevronDown size={22} className={`shrink-0 text-blue-600 transition ${planOpen ? "rotate-180" : ""}`} />
           {plan.subtitle && (
             <div className="hidden w-[84px] shrink-0 -rotate-6 text-center text-[14px] font-bold leading-tight text-blue-600 min-[400px]:block" style={{ fontFamily: "'Segoe Script','Bradley Hand','Comic Sans MS',cursive" }}>{plan.subtitle}</div>
           )}
@@ -8206,10 +8210,11 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
         </div>
       </div>
 
-      {plans.length > 1 && (
+      {planOpen && plans.length > 1 && (
         <select className={`${inputCls} mt-3`} value={plan.id} onChange={(e) => { setPlanId(e.target.value); setDayIdx(0); setOpenRow(null); }}>{plans.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</select>
       )}
 
+      {planOpen && (<>
       <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1">
         {plan.days.map((d, i) => {
           const active = i === dayIdx;
@@ -8255,6 +8260,7 @@ function StudentStudyPlan({ data, setData, student, theme, darkMode, streak, isS
           </button>
         </div>
       )}
+      </>)}
     </div>
   );
 }
