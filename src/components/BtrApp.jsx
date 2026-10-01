@@ -6610,7 +6610,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
   const [subject, setSubject] = useState(null);
   const [grade, setGrade] = useState(null);
 
-  const rows = mergedSubjects(data, isGrade12(grade) ? stream : null).map((r) => ({ ...r, count: r.notes.length }));
+  const rows = mergedSubjects(data, isGrade12(studentGrade) ? stream : null).map((r) => ({ ...r, count: r.notes.length }));
 
   const stickyStyle = {
     background: darkMode ? theme.headerBg : "rgba(255,255,255,0.95)",
