@@ -11,7 +11,7 @@ import {
   Image as ImageIcon, UploadCloud, Send, Crown, Paperclip,
   Calculator, Briefcase, Code2, Download, MoreVertical, ChevronDown, ArrowLeft,
   BadgePercent, ArrowUp, ArrowDown, Link2, Menu as MenuIcon, SlidersHorizontal, ChevronUp,
-  Brain, Cpu, ClipboardCheck, HelpCircle, Microscope, Star,
+  Brain, Cpu, ClipboardCheck, HelpCircle, Microscope, Star, WifiOff, RefreshCw,
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
@@ -9246,10 +9246,148 @@ function AppInner() {
   );
 }
 
+/* ---------------------------------------------------------------------
+   Offline screen: shown full-screen whenever the device has no internet.
+   It sits on top of the app (the app stays mounted underneath, so nothing
+   the student typed is lost) and disappears on its own as soon as the
+   connection returns. If the app was opened while offline, it reloads
+   once the connection is back so the data can load.
+--------------------------------------------------------------------- */
+function useOnlineStatus() {
+  const [online, setOnline] = useState(() =>
+    typeof navigator !== "undefined" && typeof navigator.onLine === "boolean" ? navigator.onLine : true
+  );
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, []);
+  return [online, setOnline];
+}
+
+// navigator.onLine can say "online" on a Wi-Fi network with no internet, so
+// the "Try again" button makes a real, tiny request to confirm.
+async function checkRealConnection() {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
+  try {
+    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), 6000) : null;
+    await fetch(`/?_online_check=${Date.now()}`, { method: "HEAD", cache: "no-store", signal: ctrl ? ctrl.signal : undefined });
+    if (timer) clearTimeout(timer);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function OfflineScreen({ onRetry, checking, failedOnce }) {
+  const dark = usePrefersDarkSystem();
+  const bg = dark ? "#0B1220" : "#FFFFFF";
+  const text = dark ? "#F1F5F9" : "#0F172A";
+  const sub = dark ? "#94A3B8" : "#64748B";
+  const ring = dark ? "rgba(147,197,253,0.12)" : "#E4ECFD";
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-8 text-center"
+      style={{ background: bg, color: text }}
+    >
+      <div
+        className="mb-7 flex h-28 w-28 items-center justify-center rounded-full"
+        style={{ background: ring }}
+      >
+        <div
+          className="flex h-20 w-20 items-center justify-center rounded-full"
+          style={{ background: AUTH_BLUE }}
+        >
+          <WifiOff size={38} color="#FFFFFF" strokeWidth={2.2} />
+        </div>
+      </div>
+
+      <h1 className="text-2xl font-extrabold">You&apos;re offline</h1>
+      <p className="mt-3 max-w-xs text-base leading-relaxed" style={{ color: sub }}>
+        Please connect to the internet and try again.
+      </p>
+
+      <button
+        type="button"
+        onClick={onRetry}
+        disabled={checking}
+        className="mt-8 inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-base font-bold text-white shadow-lg transition active:scale-95 disabled:opacity-70"
+        style={{ background: AUTH_BLUE }}
+      >
+        <RefreshCw size={18} className={checking ? "animate-spin" : ""} />
+        {checking ? "Checking…" : "Try again"}
+      </button>
+
+      {failedOnce && !checking && (
+        <p className="mt-4 text-sm font-semibold" style={{ color: dark ? "#FCA5A5" : "#E11D48" }}>
+          Still no connection.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function OfflineGate({ children }) {
+  const [online, setOnline] = useOnlineStatus();
+
+  // Register the worker (public/notifications-sw.js) so the offline page can
+  // be shown when the installed app is opened with no internet.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const register = () => {
+      navigator.serviceWorker.register("/notifications-sw.js", { scope: "/" }).catch(() => {});
+    };
+    if (document.readyState === "complete") register();
+    else window.addEventListener("load", register, { once: true });
+    return () => window.removeEventListener("load", register);
+  }, []);
+  const [checking, setChecking] = useState(false);
+  const [failedOnce, setFailedOnce] = useState(false);
+  const startedOfflineRef = useRef(
+    typeof navigator !== "undefined" && navigator.onLine === false
+  );
+
+  // Back online → hide the screen. If the app was opened offline, reload so
+  // the data actually loads.
+  useEffect(() => {
+    if (!online) return;
+    setFailedOnce(false);
+    if (startedOfflineRef.current) {
+      startedOfflineRef.current = false;
+      window.location.reload();
+    }
+  }, [online]);
+
+  const retry = async () => {
+    setChecking(true);
+    const ok = await checkRealConnection();
+    setChecking(false);
+    if (ok) setOnline(true);
+    else setFailedOnce(true);
+  };
+
+  return (
+    <>
+      {children}
+      {!online && <OfflineScreen onRetry={retry} checking={checking} failedOnce={failedOnce} />}
+    </>
+  );
+}
+
 export default function App() {
   return (
     <AppErrorBoundary>
-      <AppInner />
+      <OfflineGate>
+        <AppInner />
+      </OfflineGate>
     </AppErrorBoundary>
   );
 }
