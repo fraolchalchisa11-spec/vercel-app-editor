@@ -3903,6 +3903,9 @@ function AdminExams({ data, setData, onOpenInApp }) {
                   })()}
                   <div className="font-semibold text-slate-800">{e.title || `${categoryMeta[activeCategory]?.label || activeCategory} ${e.year}`}</div>
                   {e.isPro && <ProBadge />}
+                  {gradeFilter === "Grade 12" && (
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">{streamLabel(e.stream)}</span>
+                  )}
                 </div>
                 <div className="mt-0.5 text-xs text-slate-500">
                   {e.subject || "No subject set"}{e.university ? ` · ${e.university}` : ""} · Year: {e.year}
