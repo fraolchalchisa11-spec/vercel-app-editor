@@ -1405,6 +1405,7 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
   const [signupMode, setSignupMode] = useState(false);
   const [signupName, setSignupName] = useState("");
   const [signupGrade, setSignupGrade] = useState("Freshman");
+  const [signupStream, setSignupStream] = useState("");
   const [signupId, setSignupId] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPw, setSignupPw] = useState("");
@@ -1430,6 +1431,10 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
     }
     if (!GRADE_LEVELS.includes(signupGrade)) {
       setSignupErr("Choose your grade level.");
+      return;
+    }
+    if (isGrade12(signupGrade) && !STREAMS.includes(signupStream)) {
+      setSignupErr("Choose your stream: Natural Science or Social Science.");
       return;
     }
     if (!signupId.trim()) {
@@ -1466,6 +1471,7 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
       studentId: signupId.trim(),
       password: signupPw,
       grade: signupGrade,
+      stream: isGrade12(signupGrade) ? signupStream : "",
       email: signupEmail.trim(),
       planType: "",
       planPrice: "",
@@ -1922,6 +1928,30 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
                   );
                 })}
               </div>
+
+              {isGrade12(signupGrade) && (
+                <>
+                  <p className="mb-2 text-[15px] font-bold text-slate-900">Stream</p>
+                  <div className="mb-4 grid grid-cols-2 gap-2">
+                    {STREAMS.map((st) => {
+                      const active = signupStream === st;
+                      return (
+                        <button
+                          type="button"
+                          key={st}
+                          onClick={() => setSignupStream(st)}
+                          className={`rounded-2xl border py-3 text-[14px] font-bold transition ${
+                            active ? "border-transparent text-white" : "border-slate-200 bg-white text-slate-600"
+                          }`}
+                          style={active ? { background: "linear-gradient(90deg,#1141B0,#1B54D8)" } : undefined}
+                        >
+                          {st}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
 
               <p className="mb-2 text-[15px] font-bold text-slate-900">Your Student ID</p>
               <div className="relative">
@@ -3345,7 +3375,7 @@ function AdminStudents({ data, setData }) {
                     <div className="text-xs text-slate-400 sm:hidden">{s.studentId}</div>
                   </td>
                   <td className="px-4 py-3 hidden sm:table-cell text-slate-500">{s.studentId}</td>
-                  <td className="px-4 py-3 hidden md:table-cell text-slate-500">{s.grade || "—"}</td>
+                  <td className="px-4 py-3 hidden md:table-cell text-slate-500">{s.grade || "—"}{s.stream ? ` · ${s.stream}` : ""}</td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     {!sub.hasPlan ? (
                       <span className="text-slate-400">No plan set</span>
@@ -3445,6 +3475,20 @@ const NOTE_TYPES = ["Full Note"];
 // ("Entrance Exam" / "Model Exam" / "Practice Exam") — the data itself is
 // unchanged, only the label shown to the student differs.
 const GRADE_LEVELS = ["Freshman", "Grade 12"];
+const STREAMS = ["Natural Science", "Social Science"];
+// Items (subjects/exams) with no stream or "both" are visible to every stream.
+function streamMatches(itemStream, studentStream) {
+  if (!itemStream || itemStream === "both" || !studentStream) return true;
+  return itemStream === studentStream;
+}
+function examVisibleFor(e, grade, stream) {
+  const level = isGrade12(grade) ? "Grade 12" : "Freshman";
+  if ((e?.gradeLevel || "Freshman") !== level) return false;
+  return level !== "Grade 12" || streamMatches(e?.stream, stream);
+}
+function streamLabel(v) {
+  return !v || v === "both" ? "Both streams" : v;
+}
 
 function isGrade12(grade) {
   return String(grade || "").trim().toLowerCase() === "grade 12";
@@ -3618,6 +3662,14 @@ function ExamYearForm({ initial, onSave, onClose, category, data, defaultGrade }
           ))}
         </select>
       </Field>
+      {form.gradeLevel === "Grade 12" && (
+        <Field label="Stream">
+          <select className={inputCls} value={form.stream || "both"} onChange={set("stream")}>
+            <option value="both">Both streams</option>
+            {STREAMS.map((x) => <option key={x} value={x}>{x} only</option>)}
+          </select>
+        </Field>
+      )}
       <Field label="Subject">
         <select className={inputCls} value={form.subject} onChange={set("subject")}>
           <option value="">Choose a subject</option>
@@ -3851,6 +3903,9 @@ function AdminExams({ data, setData, onOpenInApp }) {
                   })()}
                   <div className="font-semibold text-slate-800">{e.title || `${categoryMeta[activeCategory]?.label || activeCategory} ${e.year}`}</div>
                   {e.isPro && <ProBadge />}
+                  {gradeFilter === "Grade 12" && (
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">{streamLabel(e.stream)}</span>
+                  )}
                 </div>
                 <div className="mt-0.5 text-xs text-slate-500">
                   {e.subject || "No subject set"}{e.university ? ` · ${e.university}` : ""} · Year: {e.year}
@@ -4206,8 +4261,15 @@ function SubjectGrid({ notes, subjects, onPick, admin, onAdd, onEdit, onDelete }
 
 function SubjectForm({ initial, onSave, onClose }) {
   const [name, setName] = useState(initial?.name || "");
+  const [stream, setStream] = useState(initial?.stream || "both");
   return (
     <Modal title={initial ? "Edit subject" : "Add subject"} onClose={onClose}>
+      <Field label="Grade 12 stream">
+        <select className={inputCls} value={stream} onChange={(e) => setStream(e.target.value)}>
+          <option value="both">Both streams</option>
+          {STREAMS.map((x) => <option key={x} value={x}>{x} only</option>)}
+        </select>
+      </Field>
       <Field label="Subject name">
         <input
           className={inputCls}
@@ -4219,7 +4281,7 @@ function SubjectForm({ initial, onSave, onClose }) {
       <button
         onClick={() => {
           if (!name.trim()) return;
-          onSave({ name: name.trim() });
+          onSave({ name: name.trim(), stream });
         }}
         className="mt-1 w-full rounded-xl py-2.5 text-sm font-semibold text-white"
         style={{ background: "linear-gradient(to right, #0EA5E9, #2563EB)" }}
@@ -4261,17 +4323,17 @@ function AdminNotes({ data, setData, onOpenInApp }) {
     setData(logMsg ? withActivity(next, logMsg.action, logMsg.detail) : next);
   };
 
-  const addSubject = ({ name }) => {
+  const addSubject = ({ name, stream }) => {
     const list = subjectsList(data);
-    setSubjects([...list, { id: uid("subj"), name, createdAt: new Date().toISOString() }], {
+    setSubjects([...list, { id: uid("subj"), name, stream: stream || "both", createdAt: new Date().toISOString() }], {
       action: "Added subject",
       detail: name,
     });
     setAddingSubject(false);
   };
-  const saveSubject = ({ name }) => {
+  const saveSubject = ({ name, stream }) => {
     const list = subjectsList(data);
-    setSubjects(list.map((s) => (s.id === editingSubject.id ? { ...s, name } : s)), {
+    setSubjects(list.map((s) => (s.id === editingSubject.id ? { ...s, name, stream: stream || "both" } : s)), {
       action: "Edited subject",
       detail: name,
     });
@@ -6133,7 +6195,7 @@ function ExamCard({ categoryLabel, subject, title, university, year, time, quest
   );
 }
 
-function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode, grade }) {
+function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode, grade, stream }) {
   const categoryMeta = useMemo(() => examCategoryMetaFor(grade), [grade]);
   const [activeCategory, setActiveCategory] = useState(EXAM_CATEGORIES[0]);
   const [yearFilter, setYearFilter] = useState("all");
@@ -6142,7 +6204,7 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
 
   const studentGradeLevel = isGrade12(grade) ? "Grade 12" : "Freshman";
   const catEntries = (data.examCategories[activeCategory] || []).filter(
-    (e) => (e.gradeLevel || "Freshman") === studentGradeLevel
+    (e) => examVisibleFor(e, grade, stream)
   );
 
   const availableYears = Array.from(new Set(catEntries.map((e) => e.year).filter(Boolean)))
@@ -6281,9 +6343,9 @@ function StudentExamBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
   );
 }
 
-function mergedSubjects(data) {
+function mergedSubjects(data, stream = null) {
   const notes = notesList(data);
-  const rows = subjectsList(data).map((s) => ({
+  const rows = subjectsList(data).filter((s) => streamMatches(s.stream, stream)).map((s) => ({
     id: s.id,
     name: s.name,
     notes: notesForSubject(notes, s.id),
@@ -6544,11 +6606,11 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
   );
 }
 
-function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode }) {
+function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode, grade, stream }) {
   const [subject, setSubject] = useState(null);
   const [grade, setGrade] = useState(null);
 
-  const rows = mergedSubjects(data).map((r) => ({ ...r, count: r.notes.length }));
+  const rows = mergedSubjects(data, isGrade12(grade) ? stream : null).map((r) => ({ ...r, count: r.notes.length }));
 
   const stickyStyle = {
     background: darkMode ? theme.headerBg : "rgba(255,255,255,0.95)",
@@ -6732,7 +6794,7 @@ function ProfileModal({ student, lang, onClose, onSave, theme }) {
         {mode === "view" && (
           <>
             <h3 className="mt-3 text-lg font-bold text-slate-900">{student.name}</h3>
-            <p className="text-sm text-slate-500">{student.grade || "—"} · {student.studentId}</p>
+            <p className="text-sm text-slate-500">{student.grade || "—"}{student.stream ? ` · ${student.stream}` : ""} · {student.studentId}</p>
           </>
         )}
       </div>
@@ -7021,7 +7083,7 @@ function FloatingActionButton({ actions, theme }) {
 
 /* ----------------------------- Search overlay ----------------------------- */
 
-function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onOpenAnnouncement, onOpenSubject, grade }) {
+function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onOpenAnnouncement, onOpenSubject, grade, stream }) {
   const categoryMeta = useMemo(() => examCategoryMetaFor(grade), [grade]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -7039,7 +7101,7 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
     const studentGradeLevel = isGrade12(grade) ? "Grade 12" : "Freshman";
     const byCat = (cat) =>
       (data.examCategories?.[cat] || [])
-        .filter((e) => (e.gradeLevel || "Freshman") === studentGradeLevel)
+        .filter((e) => examVisibleFor(e, grade, stream))
         .filter((e) => `${e.title || ""} ${cat} ${e.year || ""}`.toLowerCase().includes(q))
         .map((e) => ({ ...e, category: cat }))
         .slice(0, 12);
@@ -7052,6 +7114,7 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
     const practiceCat = catFor("practice");
 
     const subjects = subjectsList(data)
+      .filter((s) => !isGrade12(grade) || streamMatches(s.stream, stream))
       .filter((s) => `${s.name || ""}`.toLowerCase().includes(q))
       .slice(0, 12);
 
@@ -7071,7 +7134,7 @@ function SearchOverlay({ theme, lang, data, onClose, onOpenExam, onOpenNote, onO
       practice: practiceCat ? byCat(practiceCat) : [],
       announcements,
     };
-  }, [q, data, grade]);
+  }, [q, data, grade, stream]);
 
   const TABS = [
     { key: "all", label: "All" },
@@ -7410,6 +7473,7 @@ function SubscriptionScreen({ student, theme, darkMode, onClose }) {
                 {[
                   { icon: User, label: "Student ID", value: student.studentId },
                   { icon: GraduationCap, label: "Grade", value: student.grade || "—" },
+                  ...(student.stream ? [{ icon: GraduationCap, label: "Stream", value: student.stream }] : []),
                   { icon: CreditCard, label: "Plan type", value: student.planType || "—" },
                   { icon: Sparkles, label: "Plan price", value: student.planPrice ? `${student.planPrice} ETB` : "—" },
                   { icon: Calendar, label: "Expire date", value: student.expiresAt || "Not set" },
@@ -8346,7 +8410,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
   const studentGradeLevel = isGrade12(student.grade) ? "Grade 12" : "Freshman";
   const allExams = EXAM_CATEGORIES.flatMap((c) =>
     (data.examCategories[c] || [])
-      .filter((e) => (e.gradeLevel || "Freshman") === studentGradeLevel)
+      .filter((e) => examVisibleFor(e, student.grade, student.stream))
       .map((e) => ({ ...e, category: c }))
   );
   const recentExams = [...allExams]
@@ -8689,6 +8753,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                 theme={theme}
                 darkMode={darkMode}
                 grade={student.grade}
+                stream={student.stream}
                 header={
                   <PageHeader
                     variant="exam"
@@ -8733,6 +8798,8 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
             <section className="btr-fade-in">
               <StudentNoteBrowser
                 data={data}
+                grade={student.grade}
+                stream={student.stream}
                 onOpenInApp={trackAndOpen}
                 isSubscribed={subscription.hasPlan && !subscription.isExpired}
                 onUnlock={openSubscribeFlow}
@@ -8813,6 +8880,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
           lang={lang}
           data={data}
           grade={student.grade}
+          stream={student.stream}
           onClose={() => setShowSearch(false)}
           onOpenExam={(item) => {
             setShowSearch(false);
