@@ -6608,9 +6608,9 @@ function ChapterCard({ chapter, locked, onUnlock, onOpenInApp, defaultExpanded }
 
 function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header, theme, darkMode, grade, stream }) {
   const [subject, setSubject] = useState(null);
-  const [grade, setGrade] = useState(null);
+  const [noteGrade, setNoteGrade] = useState(null);
 
-  const rows = mergedSubjects(data, isGrade12(studentGrade) ? stream : null).map((r) => ({ ...r, count: r.notes.length }));
+  const rows = mergedSubjects(data, isGrade12(grade) ? stream : null).map((r) => ({ ...r, count: r.notes.length }));
 
   const stickyStyle = {
     background: darkMode ? theme.headerBg : "rgba(255,255,255,0.95)",
@@ -6633,7 +6633,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
         <div className="pt-3">
           <SubjectListCards
             rows={rows}
-            onPick={(r) => { setSubject(r); setGrade(null); }}
+            onPick={(r) => { setSubject(r); setNoteGrade(null); }}
             emptyLabel="No subjects yet."
             showHeader={false}
           />
@@ -6645,7 +6645,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
   const current = rows.find((r) => r.id === subject.id) || subject;
 
   // Level 2: grades (9-12) inside the chosen subject
-  if (!grade) {
+  if (!noteGrade) {
     return (
       <div className="relative">
         <div className="sticky top-0 z-20 -mx-5 px-5 py-3" style={stickyStyle}>
@@ -6660,14 +6660,14 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
           <p className="text-sm text-slate-500">Select your grade to access notes, exams and study materials.</p>
         </div>
         <div className="pt-3">
-          <GradeListCards grades={gradesForNotes(current.notes)} onPick={(g) => setGrade(g)} />
+          <GradeListCards grades={gradesForNotes(current.notes)} onPick={(g) => setNoteGrade(g)} />
         </div>
       </div>
     );
   }
 
   // Level 3: chapters for this subject + grade
-  const sorted = notesForGrade(current.notes || [], grade.id).sort((a, b) => {
+  const sorted = notesForGrade(current.notes || [], noteGrade.id).sort((a, b) => {
     if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
@@ -6677,18 +6677,18 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
       <div className="sticky top-0 z-20 -mx-5 px-5 py-3" style={stickyStyle}>
         {header}
         <button
-          onClick={() => setGrade(null)}
+          onClick={() => setNoteGrade(null)}
           className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700"
         >
           ← Back to grades
         </button>
-        <h3 className="mt-1 text-sm font-bold text-slate-800">{current.name} · {grade.label}</h3>
+        <h3 className="mt-1 text-sm font-bold text-slate-800">{current.name} · {noteGrade.label}</h3>
       </div>
 
       <div className="pt-3">
         {sorted.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
-            No chapters yet for {grade.label}.
+            No chapters yet for {noteGrade.label}.
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
@@ -6700,7 +6700,7 @@ function StudentNoteBrowser({ data, onOpenInApp, isSubscribed, onUnlock, header,
                   chapter={n}
                   locked={locked}
                   onUnlock={onUnlock}
-                  onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: `${current.name} · ${grade.label}` })}
+                  onOpenInApp={(source, title) => onOpenInApp(source, title, { type: "note", subject: `${current.name} · ${noteGrade.label}` })}
                 />
               );
             })}
