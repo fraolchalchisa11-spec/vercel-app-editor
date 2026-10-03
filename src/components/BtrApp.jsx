@@ -14,6 +14,7 @@ import {
   Brain, Cpu, ClipboardCheck, HelpCircle, Microscope, Star, WifiOff, RefreshCw,
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
+import MultiplayerScreen, { AdminQuizBank } from "./Multiplayer";
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
 
 import btrLogoAsset from "@/assets/btr-logo.png.asset.json";
@@ -5459,6 +5460,7 @@ function AdminShell({ data, setData, onLogout }) {
     { key: "exams", label: "Exams", shortLabel: "Exams", icon: FileText },
     { key: "notes", label: "Notes", shortLabel: "Notes", icon: StickyNote },
     { key: "schedule", label: "Study schedule", shortLabel: "Plan", icon: CalendarClock },
+    { key: "quiz", label: "Game questions", shortLabel: "Game", icon: Users },
     { key: "activity", label: "Activity log", shortLabel: "Activity", icon: Clock },
     { key: "branding", label: "Branding", shortLabel: "Brand", icon: ImageIcon },
   ];
@@ -5566,6 +5568,7 @@ function AdminShell({ data, setData, onLogout }) {
             {tab === "exams" && "Schedule exams and attach study material."}
             {tab === "notes" && "Post notes and link out to study resources."}
             {tab === "schedule" && "Build day-by-day study plans and choose who can access them."}
+            {tab === "quiz" && "Add multiple-choice questions students play in live games."}
             {tab === "activity" && "See who added, edited, or removed content, and when."}
             {tab === "branding" && "Change the logo shown on the sign-in page and throughout the app."}
           </p>
@@ -5578,6 +5581,7 @@ function AdminShell({ data, setData, onLogout }) {
           {tab === "exams" && <AdminExams data={data} setData={setData} onOpenInApp={openInApp} />}
           {tab === "notes" && <AdminNotes data={data} setData={setData} onOpenInApp={openInApp} />}
           {tab === "schedule" && <AdminStudyPlans data={data} setData={setData} />}
+          {tab === "quiz" && <AdminQuizBank data={data} setData={setData} subjects={(data.subjects && data.subjects[NOTES_BUCKET]) || []} />}
           {tab === "activity" && <AdminActivityLog data={data} setData={setData} />}
           {tab === "branding" && (
             <div className="space-y-6">
@@ -8333,6 +8337,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
   const [tab, setTab] = useState("home"); // home | exams | notes
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showMultiplayer, setShowMultiplayer] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [subFlowStep, setSubFlowStep] = useState(null); // null | "plans" | "payment" | "success"
@@ -8714,6 +8719,24 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                   </span>
                   <ChevronRight size={18} className="text-slate-400" />
                 </button>
+              )}
+
+              {/* Multiplayer quiz */}
+              <button
+                onClick={() => setShowMultiplayer(true)}
+                className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-sm"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#20BF6F] text-white">
+                  <Users size={18} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-bold text-slate-900">Play together</span>
+                  <span className="block text-xs text-slate-500">Join or host a live quiz with friends.</span>
+                </span>
+                <ChevronRight size={18} className="text-slate-400" />
+              </button>
+              {showMultiplayer && (
+                <MultiplayerScreen data={data} student={student} onClose={() => setShowMultiplayer(false)} />
               )}
 
               {/* Ad banner carousel — managed by admin */}
