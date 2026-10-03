@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Multiplayer question availability is stored as a `locked` flag on each existing quiz-bank record; hosting filters locked records so the admin's choice persists with app state without a separate store.
