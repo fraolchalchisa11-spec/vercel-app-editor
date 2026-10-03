@@ -8726,7 +8726,7 @@ function StudentShell({ student, data, setData, onLogout, onUpdateStudent }) {
                 onClick={() => setShowMultiplayer(true)}
                 className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-sm"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#20BF6F] text-white">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-game-primary text-game-primary-foreground">
                   <Users size={18} />
                 </span>
                 <span className="min-w-0 flex-1">

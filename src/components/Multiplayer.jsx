@@ -2,10 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Globe, Lock, Users, RefreshCw, PlusCircle, Radio, X, Check, XCircle, CheckCircle2, Trash2, User, Search, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-const GREEN = "#20BF6F";
-const QUESTION_SECONDS = 20;
+const QUESTION_SECONDS = 15;
 const REVEAL_SECONDS = 5;
-const AVATAR_COLORS = ["#20BF6F", "#3B82F6", "#F97316", "#A855F7", "#EF4444", "#14B8A6", "#EAB308", "#EC4899"];
+const AVATAR_COLORS = ["#2563EB", "#3B82F6", "#F97316", "#A855F7", "#EF4444", "#14B8A6", "#EAB308", "#EC4899"];
 
 function rid(n = 6) {
   return Math.random().toString(36).slice(2, 2 + n).toUpperCase();
@@ -49,7 +48,7 @@ function TopBar({ title, onBack, right, icon = "back" }) {
 
 function PrimaryButton({ children, onClick, disabled }) {
   return (
-    <button onClick={onClick} disabled={disabled} className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-base font-semibold text-white shadow-md disabled:opacity-50" style={{ background: GREEN, boxShadow: "0 4px 0 #168a50" }}>
+    <button onClick={onClick} disabled={disabled} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-game-primary py-3.5 text-base font-semibold text-game-primary-foreground shadow-md disabled:opacity-50">
       {children}
     </button>
   );
@@ -133,7 +132,7 @@ function useGame({ lobbyId, me, isHost, config, questions, announce }) {
 
   function receiveAnswer({ pid, name, choice, at }) {
     const s = stateRef.current;
-    if (s.phase !== "question") return;
+    if (s.phase !== "question" || Date.now() >= s.endsAt) return;
     hostRef.current.answers[pid] = { choice, at, name };
     const answered = Object.keys(hostRef.current.answers);
     broadcast({ ...s, answered, lastAnswered: name });
@@ -231,13 +230,13 @@ function LobbyList({ lobbies, onBack, onHost, onJoin, onJoinCode }) {
         <div className="mt-4 space-y-3">
           {open.length === 0 && <p className="rounded-2xl bg-white p-5 text-center text-sm text-slate-500">No open lobbies right now. Host one!</p>}
           {open.map((l) => (
-            <button key={l.lobbyId} onClick={() => onJoin(l)} disabled={l.count >= l.max} className="flex w-full items-center gap-4 rounded-3xl border-2 p-4 text-left disabled:opacity-60" style={{ borderColor: "#B7E4CC", background: "#EEF9F3" }}>
+            <button key={l.lobbyId} onClick={() => onJoin(l)} disabled={l.count >= l.max} className="flex w-full items-center gap-4 rounded-3xl border-2 border-game-border bg-game-soft p-4 text-left disabled:opacity-60">
               <Avatar id={l.hostId} name={l.hostName} size={56} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-lg font-bold text-slate-900">{l.hostName}</div>
                 <div className="truncate text-sm text-slate-600">{l.subject} · {l.chapter}</div>
                 <div className="mt-1.5 flex gap-2 text-xs font-bold">
-                  <span className="rounded-full px-2.5 py-1" style={{ background: "#D3F2E1", color: GREEN }}>Individual</span>
+                  <span className="rounded-full bg-game-border px-2.5 py-1 text-game-primary">Individual</span>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-800">{l.count}/{l.max}</span>
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">{l.qCount} Q</span>
                 </div>
@@ -249,7 +248,7 @@ function LobbyList({ lobbies, onBack, onHost, onJoin, onJoinCode }) {
           <div className="mb-2 text-sm font-semibold text-slate-700">Have a private code?</div>
           <div className="flex gap-2">
             <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. 7KQ2PX" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm uppercase outline-none" />
-            <button onClick={() => code.trim() && onJoinCode(code.trim())} className="rounded-xl px-4 text-sm font-semibold text-white" style={{ background: GREEN }}>Join</button>
+            <button onClick={() => code.trim() && onJoinCode(code.trim())} className="rounded-xl bg-game-primary px-4 text-sm font-semibold text-game-primary-foreground">Join</button>
           </div>
         </div>
       </div>
@@ -261,7 +260,7 @@ function LobbyList({ lobbies, onBack, onHost, onJoin, onJoinCode }) {
 }
 
 function HostSetup({ data, me, onBack, onCreate }) {
-  const bank = Array.isArray(data?.quizBank) ? data.quizBank : [];
+  const bank = Array.isArray(data?.quizBank) ? data.quizBank.filter((q) => q.locked !== true) : [];
   const subjects = useMemo(() => [...new Set(bank.map((q) => q.subject).filter(Boolean))], [bank]);
   const [name, setName] = useState(me.name || "");
   const [visibility, setVisibility] = useState("public");
@@ -298,7 +297,7 @@ function HostSetup({ data, me, onBack, onCreate }) {
           <h3 className="mb-3 text-xl font-medium text-slate-900">Visibility</h3>
           <div className="grid grid-cols-2 gap-3">
             {[["public", "Public", Globe], ["private", "Private", Lock]].map(([k, l, I]) => (
-              <button key={k} onClick={() => setVisibility(k)} className="flex items-center justify-center gap-2 rounded-2xl border-2 py-3 font-semibold" style={visibility === k ? { background: GREEN, borderColor: GREEN, color: "#fff" } : { background: "#fff", borderColor: "#E2E8F0", color: "#0F172A" }}>
+              <button key={k} onClick={() => setVisibility(k)} className={`flex items-center justify-center gap-2 rounded-2xl border-2 py-3 font-semibold ${visibility === k ? "border-game-primary bg-game-primary text-game-primary-foreground" : "border-slate-200 bg-white text-slate-900"}`}>
                 <I size={18} /> {l}
               </button>
             ))}
@@ -328,13 +327,13 @@ function HostSetup({ data, me, onBack, onCreate }) {
               </div>
               <div className="mt-3 space-y-2.5">
                 {shown.map(([c, n]) => (
-                  <button key={c} onClick={() => setChapter(c)} className="flex w-full items-center rounded-2xl border-2 bg-white px-4 py-3 text-left" style={{ borderColor: chapter === c ? GREEN : "#E2E8F0" }}>
+                  <button key={c} onClick={() => setChapter(c)} className={`flex w-full items-center rounded-2xl border-2 bg-white px-4 py-3 text-left ${chapter === c ? "border-game-primary" : "border-slate-200"}`}>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-base font-medium text-slate-900">{c}</div>
                       <div className="text-sm text-slate-500">{n} questions</div>
                     </div>
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full border-2" style={{ borderColor: chapter === c ? GREEN : "#CBD5E1" }}>
-                      {chapter === c && <span className="h-3 w-3 rounded-full" style={{ background: GREEN }} />}
+                    <span className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${chapter === c ? "border-game-primary" : "border-slate-300"}`}>
+                      {chapter === c && <span className="h-3 w-3 rounded-full bg-game-primary" />}
                     </span>
                   </button>
                 ))}
@@ -359,10 +358,10 @@ function Scoreboard({ players, scores, results, gained, meId }) {
           <span className="w-8 text-lg text-slate-800">#{i + 1}</span>
           <Avatar id={p.id} name={p.name} size={40} />
           <span className="min-w-0 flex-1 truncate text-base text-slate-900">{p.name}{p.host ? " (host)" : ""}{p.id === meId ? " · you" : ""}</span>
-          {results && (results[p.id] ? <CheckCircle2 size={22} className="text-white" fill={GREEN} /> : <XCircle size={22} className="text-white" fill="#EF4444" />)}
+          {results && (results[p.id] ? <CheckCircle2 size={22} className="text-game-primary" /> : <XCircle size={22} className="text-rose-500" />)}
           <div className="w-12 text-right">
             <div className="text-xl font-medium text-slate-900">{scores?.[p.id] || 0}</div>
-            {gained?.[p.id] ? <div className="text-sm" style={{ color: GREEN }}>+{gained[p.id]}</div> : null}
+            {gained?.[p.id] ? <div className="text-sm text-game-primary">+{gained[p.id]}</div> : null}
           </div>
         </div>
       ))}
@@ -433,18 +432,18 @@ function GameRoom({ session, me, onLeave, announce }) {
         <TopBar title={`Q${state.index + 1} / ${state.total}`} onBack={onLeave} icon="close" />
         <div className="px-4 pb-10">
           <div className="flex items-center gap-4">
-            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: GREEN }} /></div>
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-game-primary transition-all" style={{ width: `${pct}%` }} /></div>
             <span className="text-xl font-medium">{left}s</span>
           </div>
           <div className="mt-3 text-sm text-slate-600">Answers: {(state.answered || []).length}/{players.length}</div>
-          {state.lastAnswered && <div className="mt-2 rounded-xl py-2 text-center text-sm font-medium" style={{ background: "#E3F6EC", color: GREEN }}>{state.lastAnswered} answered</div>}
+          {state.lastAnswered && <div className="mt-2 rounded-xl bg-game-soft py-2 text-center text-sm font-medium text-game-primary">{state.lastAnswered} answered</div>}
           <h2 className="my-7 text-center text-2xl font-bold leading-snug text-slate-900">{state.question.text}</h2>
           <div className="space-y-3">
             {state.question.options.map((o, i) => {
               const sel = myChoice === i;
               return (
-                <button key={i} onClick={() => { setMyChoice(i); sendAnswer(i); }} className="flex w-full items-center gap-4 rounded-2xl border-2 px-4 py-3.5 text-left" style={sel ? { background: "#1BA05E", borderColor: "#1BA05E", color: "#fff" } : { background: "#fff", borderColor: "#E2E8F0", color: "#0F172A" }}>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg" style={sel ? { background: "rgba(255,255,255,0.2)" } : { background: "#E3F6EC", color: GREEN }}>{"ABCD"[i]}</span>
+                <button key={i} disabled={left === 0} onClick={() => { setMyChoice(i); sendAnswer(i); }} className={`flex w-full items-center gap-4 rounded-2xl border-2 px-4 py-3.5 text-left disabled:cursor-not-allowed ${sel ? "border-game-primary bg-game-primary text-game-primary-foreground" : "border-slate-200 bg-white text-slate-900"}`}>
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${sel ? "bg-game-border text-game-primary" : "bg-game-soft text-game-primary"}`}>{"ABCD"[i]}</span>
                   <span className="flex-1 text-base">{o}</span>
                   {sel && <Check size={22} />}
                 </button>
@@ -463,10 +462,10 @@ function GameRoom({ session, me, onLeave, announce }) {
       <div className="min-h-screen bg-slate-50">
         <TopBar title={`Q${state.index + 1} / ${state.total}`} onBack={onLeave} icon="close" />
         <div className="px-4 pb-10">
-          <div className="h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full" style={{ width: `${pct}%`, background: GREEN }} /></div>
+          <div className="h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-game-primary" style={{ width: `${pct}%` }} /></div>
           <div className="mt-4 rounded-2xl border-2 border-slate-200 bg-white p-4">
             <div className="text-sm text-slate-600">Correct answer</div>
-            <div className="mt-1 text-2xl" style={{ color: GREEN }}>{state.correctText}</div>
+            <div className="mt-1 text-2xl text-game-primary">{state.correctText}</div>
             {state.explanation && <p className="mt-2 text-base text-slate-600">{state.explanation}</p>}
           </div>
           <h3 className="mb-3 mt-6 text-lg text-slate-900">Scores</h3>
@@ -528,7 +527,7 @@ export function AdminQuizBank({ data, setData, subjects = [] }) {
   const empty = { subject: names[0] || "", chapter: "", question: "", options: ["", "", "", ""], correct: 0, explanation: "" };
   const [form, setForm] = useState(empty);
   const [filter, setFilter] = useState("");
-  const cls = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500";
+  const cls = "w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-game-primary";
   const save = () => {
     if (!form.subject.trim() || !form.question.trim() || form.options.some((o) => !o.trim())) return alert("Fill subject, question and all 4 options.");
     const item = { ...form, id: rid(10), subject: form.subject.trim(), chapter: form.chapter.trim() || "General" };
@@ -536,6 +535,7 @@ export function AdminQuizBank({ data, setData, subjects = [] }) {
     setForm({ ...empty, subject: form.subject, chapter: form.chapter });
   };
   const remove = (id) => setData((d) => ({ ...d, quizBank: (d.quizBank || []).filter((q) => q.id !== id) }));
+  const toggleLock = (id) => setData((d) => ({ ...d, quizBank: (d.quizBank || []).map((q) => q.id === id ? { ...q, locked: q.locked !== true } : q) }));
   const shown = bank.filter((q) => !filter || q.subject === filter);
   const allSubjects = [...new Set([...names, ...bank.map((q) => q.subject)])];
   return (
@@ -557,7 +557,7 @@ export function AdminQuizBank({ data, setData, subjects = [] }) {
         ))}
         <p className="text-xs text-slate-500">Tick the circle next to the correct answer.</p>
         <textarea className={cls} rows={2} placeholder="Explanation (optional)" value={form.explanation} onChange={(e) => setForm({ ...form, explanation: e.target.value })} />
-        <button onClick={save} className="rounded-xl px-4 py-2 text-sm font-semibold text-white" style={{ background: GREEN }}>Add question</button>
+        <button onClick={save} className="rounded-xl bg-game-primary px-4 py-2 text-sm font-semibold text-game-primary-foreground">Add question</button>
       </div>
       <div className="flex items-center gap-2">
         <select className={cls + " max-w-xs"} value={filter} onChange={(e) => setFilter(e.target.value)}>
@@ -572,8 +572,10 @@ export function AdminQuizBank({ data, setData, subjects = [] }) {
             <div className="min-w-0 flex-1">
               <div className="text-xs text-slate-500">{q.subject} · {q.chapter}</div>
               <div className="text-sm font-semibold text-slate-900">{q.question}</div>
-              <div className="text-xs" style={{ color: GREEN }}>Answer: {q.options[q.correct]}</div>
+              <div className="text-xs text-game-primary">Answer: {q.options[q.correct]}</div>
+              {q.locked === true && <div className="mt-1 text-xs font-semibold text-slate-500">Locked · not available in new games</div>}
             </div>
+            <button onClick={() => toggleLock(q.id)} aria-label={q.locked === true ? "Unlock question" : "Lock question"} title={q.locked === true ? "Unlock question" : "Lock question"} className="text-game-primary">{q.locked === true ? <Lock size={18} /> : <Lock size={18} className="opacity-40" />}</button>
             <button onClick={() => remove(q.id)} aria-label="Delete" className="text-rose-500"><Trash2 size={16} /></button>
           </div>
         ))}
