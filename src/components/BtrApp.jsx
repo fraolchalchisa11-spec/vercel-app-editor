@@ -1659,11 +1659,6 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
         (s.email && s.email.trim().toLowerCase() === typed)
     );
     if (!student) {
-      if (!adminExists && password.length >= 4) {
-        // First-run: no admin exists yet, so these credentials create it.
-        onAdminSetup({ username: idValue.trim(), password });
-        return;
-      }
       setErr("No account found with that ID or email.");
       return;
     }
@@ -2165,7 +2160,7 @@ function LoginScreen({ data, setData, onAdminLogin, onStudentLogin, onAdminSetup
                   fontSize: "clamp(15px, 2.3vh, 19px)",
                 }}
               >
-                {adminExists ? "Login" : "Create admin account"} <ArrowRight size={20} />
+                Login <ArrowRight size={20} />
               </button>
 
               {googleClientId && (
