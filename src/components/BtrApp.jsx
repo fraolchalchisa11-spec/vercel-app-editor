@@ -14,7 +14,8 @@ import {
   Brain, Cpu, ClipboardCheck, HelpCircle, Microscope, Star, WifiOff, RefreshCw,
 } from "lucide-react";
 import { getAppState, saveAppState } from "@/lib/app-state.functions";
-import MultiplayerScreen, { AdminQuizBank } from "./Multiplayer";
+const MultiplayerScreen = React.lazy(() => import("./Multiplayer"));
+const AdminQuizBank = React.lazy(() => import("./Multiplayer").then((m) => ({ default: m.AdminQuizBank })));
 import { uploadImageFile, uploadHtmlFile } from "@/lib/upload-file";
 
 import btrLogoAsset from "@/assets/btr-logo.png.asset.json";
