@@ -1218,12 +1218,16 @@ function useStore() {
     return () => { cancelled = true; };
   }, []);
 
-  // Cross-device sync: poll the shared cloud state and merge remote changes in.
+  // Cross-device sync: no polling. Refresh only when the user comes back to the
+  // app, and at most once every 2 minutes, to keep data transfer low.
   useEffect(() => {
     let stopped = false;
-    const tick = async () => {
+    let lastFetch = Date.now();
+    const refresh = async () => {
       if (stopped || dirtyRef.current || pushingRef.current) return;
       if (typeof document !== "undefined" && document.hidden) return;
+      if (Date.now() - lastFetch < 120000) return;
+      lastFetch = Date.now();
       try {
         const res = await getAppState();
         if (stopped || dirtyRef.current || pushingRef.current) return;
@@ -1237,26 +1241,25 @@ function useStore() {
         if (JSON.stringify(merged) !== JSON.stringify(latestRef.current)) applyLocal(merged);
       } catch {}
     };
-    const id = setInterval(tick, 900);
-    const onFocus = () => { tick(); };
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
+    document.addEventListener("visibilitychange", refresh);
     return () => {
       stopped = true;
-      clearInterval(id);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, []);
 
   // Flush pending writes before the tab closes / is hidden.
   useEffect(() => {
-    const onHide = () => { if (dirtyRef.current) pushToCloud(); };
-    window.addEventListener("pagehide", onHide);
-    window.addEventListener("visibilitychange", onHide);
+    const onHide = () => {
+      if (document.visibilityState !== "hidden" && !(onHide.forced)) return;
+      if (dirtyRef.current) { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); pushToCloud(); }
+    };
+    const onPageHide = () => { if (dirtyRef.current) { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); pushToCloud(); } };
+    window.addEventListener("pagehide", onPageHide);
+    document.addEventListener("visibilitychange", onHide);
     return () => {
-      window.removeEventListener("pagehide", onHide);
-      window.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onPageHide);
+      document.removeEventListener("visibilitychange", onHide);
     };
   }, []);
 
@@ -1264,10 +1267,19 @@ function useStore() {
     const base = latestRef.current || makeDefaultData();
     const candidate = typeof nextOrFn === "function" ? nextOrFn(base) : nextOrFn;
     const normalized = normalizeData(candidate);
+    // Skip if nothing actually changed.
+    if (latestRef.current && JSON.stringify(normalized) === JSON.stringify(latestRef.current)) return;
     applyLocal(normalized);
+    // Nothing differs from what the cloud already has: no write needed.
+    if (baseRef.current && JSON.stringify(normalized) === JSON.stringify(baseRef.current)) {
+      dirtyRef.current = false;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      return;
+    }
     dirtyRef.current = true;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => { pushToCloud(); }, 120);
+    // Debounced: sync after 3 seconds of inactivity (or on leaving the page).
+    saveTimerRef.current = setTimeout(() => { pushToCloud(); }, 3000);
   };
 
   return { data, setData: save, loading, error };
