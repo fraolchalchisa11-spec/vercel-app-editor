@@ -9,4 +9,5 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Multiplayer question availability is stored as a `locked` flag on each existing quiz-bank record; hosting filters locked records so the admin's choice persists with app state without a separate store.
+- Bulk quiz questions live as static per-exam JSON in `public/quizzes/` (listed in `index.json`), fetched on demand and memory-cached; admin locks/removals of those are id lists (`quizLocks`, `quizRemoved`) in app state, while admin-typed questions stay in `quizBank` with a `locked` flag — keeps the shared app-state payload small to save bandwidth.
+- App state syncs without polling: refresh only on returning to the tab (throttled), saves debounced 3s and flushed on page hide — the whole app state is one row, so every fetch is costly.
