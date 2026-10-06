@@ -26,9 +26,9 @@ const AUTH_LOGO_URL = btrAuthLogoAsset.url;
 const AUTH_BLUE = "#123FBE";
 const HOME_LOGO_URL = btrLogoMainAsset.url;
 
-// App background uploaded to /public/app-background.png
-const APP_BG_URL = "/app-background.png";
-const EXAM_NOTES_BG_URL = "/exam-notes-background.png";
+// App background uploaded to /public/app-background.webp
+const APP_BG_URL = "/app-background.webp";
+const EXAM_NOTES_BG_URL = "/exam-notes-background.webp";
 
 
 

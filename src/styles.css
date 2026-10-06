@@ -175,7 +175,7 @@ body::before {
   inset: 0;
   z-index: -1;
   background-color: #000;
-  background-image: url("/app-background.png");
+  background-image: url("/app-background.webp");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
