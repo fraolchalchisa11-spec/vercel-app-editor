@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Globe, Lock, Users, RefreshCw, PlusCircle, Radio, X, Check, XCircle, CheckCircle2, Trash2, User, Search, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { loadQuizIndex, loadQuizFile, applyQuizOverrides } from "@/lib/quiz-files";
 
 const QUESTION_SECONDS = 15;
 const REVEAL_SECONDS = 5;
@@ -260,26 +261,34 @@ function LobbyList({ lobbies, onBack, onHost, onJoin, onJoinCode }) {
 }
 
 function HostSetup({ data, me, onBack, onCreate }) {
-  const bank = Array.isArray(data?.quizBank) ? data.quizBank.filter((q) => q.locked !== true) : [];
-  const subjects = useMemo(() => [...new Set(bank.map((q) => q.subject).filter(Boolean))], [bank]);
+  const [index, setIndex] = useState([]);
+  useEffect(() => { loadQuizIndex().then((x) => setIndex(Array.isArray(x) ? x : [])); }, []);
+  const custom = useMemo(() => (Array.isArray(data?.quizBank) ? data.quizBank.filter((q) => q.locked !== true) : []), [data?.quizBank]);
+  const subjects = useMemo(() => [...new Set([...index.map((x) => x.subject), ...custom.map((q) => q.subject)].filter(Boolean))], [index, custom]);
   const [name, setName] = useState(me.name || "");
   const [visibility, setVisibility] = useState("public");
   const [max, setMax] = useState(8);
-  const [subject, setSubject] = useState(subjects[0] || "");
+  const [subject, setSubject] = useState("");
+  useEffect(() => { if (!subject && subjects[0]) setSubject(subjects[0]); }, [subjects]); // eslint-disable-line react-hooks/exhaustive-deps
   const [chapter, setChapter] = useState("");
   const [q, setQ] = useState("");
   const chapters = useMemo(() => {
     const m = {};
-    bank.filter((x) => x.subject === subject).forEach((x) => (m[x.chapter || "General"] = (m[x.chapter || "General"] || 0) + 1));
+    index.filter((x) => x.subject === subject).forEach((x) => (m[x.chapter] = (m[x.chapter] || 0) + x.count));
+    custom.filter((x) => x.subject === subject).forEach((x) => (m[x.chapter || "General"] = (m[x.chapter || "General"] || 0) + 1));
     return Object.entries(m);
-  }, [bank, subject]);
+  }, [index, custom, subject]);
   useEffect(() => {
     if (!chapters.find(([c]) => c === chapter)) setChapter(chapters[0]?.[0] || "");
   }, [chapters]); // eslint-disable-line react-hooks/exhaustive-deps
   const shown = chapters.filter(([c]) => c.toLowerCase().includes(q.toLowerCase()));
-  const create = () => {
-    const qs = shuffle(bank.filter((x) => x.subject === subject && (x.chapter || "General") === chapter)).slice(0, 40);
-    if (!qs.length || !name.trim()) return;
+  const create = async () => {
+    if (!name.trim()) return;
+    const files = index.filter((x) => x.subject === subject && x.chapter === chapter);
+    const fromFiles = (await Promise.all(files.map((f) => loadQuizFile(f.file)))).flat();
+    const pool = [...applyQuizOverrides(fromFiles, data), ...custom.filter((x) => x.subject === subject && (x.chapter || "General") === chapter)];
+    const qs = shuffle(pool).slice(0, 40);
+    if (!qs.length) return;
     onCreate({ name: name.trim(), visibility, max, subject, chapter, questions: qs });
   };
   return (
@@ -522,7 +531,15 @@ export default function MultiplayerScreen({ data, student, onClose }) {
 
 /* ---------------- Admin: quiz question bank ---------------- */
 export function AdminQuizBank({ data, setData, subjects = [] }) {
-  const bank = Array.isArray(data?.quizBank) ? data.quizBank : [];
+  const [fileQs, setFileQs] = useState([]);
+  useEffect(() => {
+    loadQuizIndex().then(async (idx) => {
+      const all = await Promise.all((idx || []).map((f) => loadQuizFile(f.file)));
+      setFileQs(all.flat().map((q) => ({ ...q, fromFile: true })));
+    });
+  }, []);
+  const custom = Array.isArray(data?.quizBank) ? data.quizBank : [];
+  const bank = [...applyQuizOverrides(fileQs, data, { includeLocked: true }), ...custom];
   const names = subjects.map(subjectName).filter(Boolean);
   const empty = { subject: names[0] || "", chapter: "", question: "", options: ["", "", "", ""], correct: 0, explanation: "" };
   const [form, setForm] = useState(empty);
@@ -534,8 +551,13 @@ export function AdminQuizBank({ data, setData, subjects = [] }) {
     setData((d) => ({ ...d, quizBank: [...(Array.isArray(d.quizBank) ? d.quizBank : []), item] }));
     setForm({ ...empty, subject: form.subject, chapter: form.chapter });
   };
-  const remove = (id) => setData((d) => ({ ...d, quizBank: (d.quizBank || []).filter((q) => q.id !== id) }));
-  const toggleLock = (id) => setData((d) => ({ ...d, quizBank: (d.quizBank || []).map((q) => q.id === id ? { ...q, locked: q.locked !== true } : q) }));
+  const isFile = (id) => fileQs.some((q) => q.id === id);
+  const remove = (id) => isFile(id)
+    ? setData((d) => ({ ...d, quizRemoved: [...new Set([...(d.quizRemoved || []), id])] }))
+    : setData((d) => ({ ...d, quizBank: (d.quizBank || []).filter((q) => q.id !== id) }));
+  const toggleLock = (id) => isFile(id)
+    ? setData((d) => { const l = new Set(d.quizLocks || []); l.has(id) ? l.delete(id) : l.add(id); return { ...d, quizLocks: [...l] }; })
+    : setData((d) => ({ ...d, quizBank: (d.quizBank || []).map((q) => q.id === id ? { ...q, locked: q.locked !== true } : q) }));
   const shown = bank.filter((q) => !filter || q.subject === filter);
   const allSubjects = [...new Set([...names, ...bank.map((q) => q.subject)])];
   return (
