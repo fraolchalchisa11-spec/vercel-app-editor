@@ -1207,6 +1207,7 @@ function useStore() {
           lastRemoteRef.current = serialized;
           baseRef.current = JSON.parse(serialized);
         }
+        loadedRef.current = true;
       } catch (e) {
         console.error("[useStore] load failed", e);
         if (!cancelled && !latestRef.current) applyLocal(normalizeData(makeDefaultData()));
