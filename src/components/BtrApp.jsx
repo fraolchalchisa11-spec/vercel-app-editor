@@ -1120,6 +1120,7 @@ function useStore() {
   const saveTimerRef = useRef(null);
   const dirtyRef = useRef(false);
   const pushingRef = useRef(false);
+  const loadedRef = useRef(false); // true only after the cloud copy was read successfully
 
   const applyLocal = (next) => {
     latestRef.current = next;
@@ -1135,15 +1136,16 @@ function useStore() {
     if (pushingRef.current) return;
     const payload = latestRef.current;
     if (!payload) return;
+    // Never write before we've successfully read the cloud copy, otherwise a device
+    // that failed to load would overwrite everyone's data with an empty default.
+    if (!loadedRef.current) { dirtyRef.current = true; return; }
     pushingRef.current = true;
     dirtyRef.current = false;
     try {
-      let merged = payload;
-      try {
-        const res = await getAppState();
-        const remote = res && res.data && Object.keys(res.data).length ? normalizeData(res.data) : null;
-        if (remote) merged = normalizeData(merge3(baseRef.current, payload, remote));
-      } catch {}
+      // If the cloud can't be read right now, abort (retry later) instead of blind-writing.
+      const res = await getAppState();
+      const remote = res && res.data && Object.keys(res.data).length ? normalizeData(res.data) : null;
+      const merged = remote ? normalizeData(merge3(baseRef.current, payload, remote)) : payload;
       // If the user changed something locally while this push was in flight (e.g. a
       // second upload/edit landed during the network round-trip), `merged` here was
       // computed from a now-stale snapshot. Applying it would silently discard that
