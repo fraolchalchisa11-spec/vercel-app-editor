@@ -20,8 +20,10 @@ export async function writeAppState(
 ): Promise<{ data: JsonObject }> {
   // Safety net: refuse a write that would wipe most student accounts at once.
   const current = await readAppState();
-  const before = Array.isArray(current.data?.students) ? current.data.students.length : 0;
-  const after = Array.isArray(payload?.students) ? payload.students.length : 0;
+  const beforeList = current.data?.["students"];
+  const afterList = payload?.["students"];
+  const before = Array.isArray(beforeList) ? beforeList.length : 0;
+  const after = Array.isArray(afterList) ? afterList.length : 0;
   if (before >= 5 && after < before * 0.5) {
     throw new Error("Save blocked: it would remove most student accounts.");
   }
