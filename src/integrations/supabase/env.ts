@@ -1,16 +1,10 @@
 /**
- * Supabase connection config for YOUR OWN Supabase project.
- *
- * The URL and publishable (anon) key are safe to ship in the client bundle.
- * They are hardcoded here as a fallback so the app works in the Lovable
- * preview, on Vercel, and locally without Lovable Cloud being involved.
- *
- * Set these in Vercel (Project Settings -> Environment Variables) to override:
- *   VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY  (client + SSR)
- *   SUPABASE_SERVICE_ROLE_KEY or APP_SUPABASE_SERVICE_ROLE_KEY (server only)
+ * Supabase connection config for the dedicated BTR backend.
+ * Publishable keys are safe in browser code. Service-role keys must remain
+ * server-only and must be configured as Vercel environment variables.
  */
-const FALLBACK_SUPABASE_URL = "https://hrvrinjsabwzgrvqpdxp.supabase.co";
-const FALLBACK_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Rmihd9M3dwGTgYeieYy3eg__CVqhnbw";
+const FALLBACK_SUPABASE_URL = "https://phkzurfmegscjpggklcl.supabase.co";
+const FALLBACK_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ydqf8W1aAUYHZog88dLrug_vSNF3T3-";
 
 function fromProcess(name: string): string | undefined {
   if (typeof process === "undefined") return undefined;
@@ -37,6 +31,8 @@ export function getSupabasePublishableKey(): string {
 /** Server-only. Empty string when not configured. */
 export function getSupabaseServiceRoleKey(): string {
   return (
-    fromProcess("SUPABASE_SERVICE_ROLE_KEY") || fromProcess("APP_SUPABASE_SERVICE_ROLE_KEY") || ""
+    fromProcess("SUPABASE_SERVICE_ROLE_KEY") ||
+    fromProcess("APP_SUPABASE_SERVICE_ROLE_KEY") ||
+    ""
   );
 }
